@@ -650,7 +650,7 @@ function pdfBuoni(signer){
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
   doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(grand),W-20,y+6.5,{align:'right'}); y+=14;
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
-  doc.text('Vuoto = presente (1 buono)    SD = sost. diurna (2)    SN = sost. notturna (1)    R = recupero (0)    sigle assenza (0)    esterno straordinario (1), sostituzione (0).',16,y);
+  doc.text('Personale: vuoto = presente (1)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario (1)   SO = sostituzione (0).',16,y);
   pdfSign(doc,'Siracusa, '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
   doc.save('buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
 }
