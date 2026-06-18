@@ -1,0 +1,634 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#15243A">
+<title>Presenze VVF Lentini</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-database-compat.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<style>
+  :root{--ink:#10151E;--ink2:#5B636E;--line:#E4E7E2;--paper:#FFFFFF;--paper2:#F7F8F5;--night:#15243A;--night2:#1D3050;--steel:#1F5C99;--amber:#E0A314;--fire:#C8102E;--green:#2C8B4B;--onDark:#EAF0F7;--onDark2:#92A3B7;}
+  *{margin:0;padding:0;box-sizing:border-box;}
+  body{font-family:'Barlow',system-ui,Arial,sans-serif;background:#0D1420;color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;}
+  .cond{font-family:'Barlow Semi Condensed','Barlow',sans-serif;}
+  .eyebrow{font-family:'Barlow Semi Condensed',sans-serif;text-transform:uppercase;letter-spacing:0.09em;font-size:0.68rem;font-weight:600;color:var(--ink2);}
+  .hide{display:none!important;}
+  /* LOGIN */
+  #login{min-height:100vh;display:flex;align-items:center;justify-content:center;padding:1.2rem;}
+  .login-card{background:var(--night);border-radius:14px;padding:1.8rem 1.5rem;max-width:380px;width:100%;border-top:4px solid var(--fire);}
+  .login-card .badge-vvf{width:54px;height:54px;border:2px solid var(--fire);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.85rem;line-height:0.9;text-align:center;margin:0 auto 0.8rem;}
+  .login-card h1{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.7rem;letter-spacing:0.04em;color:#fff;text-align:center;}
+  .login-card .ls{font-size:0.78rem;color:var(--onDark2);text-align:center;margin:0.15rem 0 1.3rem;}
+  .login-card label{display:block;font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.07em;font-size:0.66rem;font-weight:600;color:var(--onDark2);margin:0.7rem 0 0.25rem;}
+  .login-card input{width:100%;padding:0.65rem 0.8rem;border:1px solid #2A3C5A;background:#0F1A2B;color:#fff;border-radius:8px;font-family:inherit;font-size:0.95rem;}
+  .login-card input:focus{outline:none;border-color:var(--amber);}
+  .login-err{color:#FF8A9B;font-size:0.78rem;margin-top:0.7rem;min-height:1rem;text-align:center;}
+  .cfg-warn{background:#3A2410;border:1px solid #7A4A12;color:#F2C58A;border-radius:8px;padding:0.7rem 0.85rem;font-size:0.74rem;margin-top:1rem;line-height:1.45;}
+  /* APP shell */
+  .app{max-width:920px;margin:0.6rem auto 2rem;padding:0 0.6rem;}
+  .header{background:var(--night);border-radius:12px 12px 0 0;padding:0.95rem 1.1rem 0;}
+  .header .top{display:flex;align-items:flex-end;gap:0.7rem;}
+  .brand{display:flex;align-items:center;gap:0.6rem;}
+  .badge-vvf2{width:38px;height:38px;border:2px solid var(--fire);border-radius:8px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.62rem;line-height:0.9;text-align:center;}
+  .h-title{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.5rem;letter-spacing:0.04em;color:#fff;line-height:1;}
+  .h-sub{font-size:0.72rem;color:var(--onDark2);margin-top:0.15rem;letter-spacing:0.02em;}
+  .h-right{margin-left:auto;display:flex;align-items:center;gap:0.7rem;}
+  .h-status{display:flex;align-items:center;gap:0.4rem;font-size:0.68rem;color:var(--onDark2);}
+  .dot{width:7px;height:7px;border-radius:50%;background:#3FB466;}
+  .dot.off{background:#E0A314;}
+  .logout{background:none;border:1px solid #34466A;color:var(--onDark2);border-radius:6px;font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.05em;font-size:0.64rem;font-weight:600;padding:0.3rem 0.55rem;cursor:pointer;}
+  .logout:hover{color:#fff;border-color:#fff;}
+  .firestripe{height:3px;background:var(--fire);margin-top:0.85rem;border-radius:2px;}
+  .nav{background:var(--night2);display:flex;}
+  .nav button{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:0.6rem 0.3rem 0.5rem;color:var(--onDark2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;transition:0.12s;}
+  .nav button:hover{color:#C7D5E6;}
+  .nav button.active{color:#fff;border-bottom-color:var(--amber);}
+  .nav svg{width:21px;height:21px;}
+  .nav .nl{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.06em;font-size:0.64rem;font-weight:600;}
+  .content{background:var(--paper);border-radius:0 0 12px 12px;padding:1.15rem 1.1rem 1.3rem;min-height:60vh;}
+  .ctl-row{display:flex;gap:0.55rem;margin-bottom:1.1rem;flex-wrap:wrap;}
+  .field{flex:1;min-width:130px;border:1px solid var(--line);border-radius:8px;padding:0.4rem 0.65rem;background:var(--paper);}
+  .field label{display:block;}
+  .field select,.field input{width:100%;border:none;background:none;font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.02rem;color:var(--ink);padding:0.05rem 0;cursor:pointer;}
+  .field select:focus,.field input:focus{outline:none;}
+  .sec-h{margin:1.35rem 0 0.6rem;}
+  .sec-h:first-child{margin-top:0;}
+  .grid-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
+  table.grid{border-collapse:collapse;min-width:max-content;width:100%;}
+  .grid th,.grid td{border-bottom:1px solid #F0F1ED;padding:0;}
+  .grid thead th{background:var(--paper2);border-bottom:2px solid var(--line);padding:0.45rem 0.35rem;vertical-align:top;}
+  .grid th.name,.grid td.name{position:sticky;left:0;background:var(--paper);text-align:left;min-width:140px;z-index:2;border-right:1px solid var(--line);padding:0.4rem 0.5rem;}
+  .grid thead th.name{background:var(--paper2);z-index:3;}
+  .daynum{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.02rem;color:var(--ink);line-height:1;}
+  .dayw{font-size:0.58rem;color:var(--ink2);text-transform:uppercase;letter-spacing:0.04em;margin:0.1rem 0 0.25rem;}
+  .gn{display:inline-block;width:20px;border-radius:4px;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.66rem;color:#fff;padding:0.05rem 0;}
+  .gn-g{background:var(--amber);} .gn-n{background:var(--steel);}
+  .pname{font-weight:600;font-size:0.9rem;line-height:1.05;}
+  .pq{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.05em;font-size:0.58rem;font-weight:600;color:#fff;background:#9098A3;border-radius:3px;padding:0.03rem 0.28rem;margin-bottom:0.15rem;display:inline-block;}
+  td.daycell{padding:0.16rem 0.2rem;text-align:center;}
+  .cell{width:34px;height:30px;border:none;background:none;cursor:pointer;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.74rem;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+  .chipc{width:30px;height:23px;border-radius:5px;display:flex;align-items:center;justify-content:center;}
+  .empty{color:#D2D5CE;} .empty:hover{background:#F4F5F1;border-radius:5px;}
+  .rcell{background:#EDEFEA;border:1px dashed #C2C6BD;color:#737A70;border-radius:5px;width:30px;height:23px;}
+  .legend{display:flex;gap:0.5rem 0.85rem;flex-wrap:wrap;margin-top:0.7rem;font-size:0.68rem;color:var(--ink2);}
+  .legend b{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:0.25rem;}
+  .cap{font-size:0.66rem;color:#9AA0A8;text-align:center;margin-top:0.5rem;}
+  .btn{font-family:'Barlow Semi Condensed';font-weight:600;letter-spacing:0.03em;border:none;border-radius:8px;padding:0.7rem 1rem;font-size:0.92rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;text-transform:uppercase;}
+  .btn-full{width:100%;} .btn-fire{background:var(--fire);color:#fff;} .btn-fire:hover{background:#A50D26;}
+  .btn-out{background:#fff;color:var(--ink);border:1px solid var(--line);} .btn-out:hover{background:var(--paper2);}
+  .btn-xs{padding:0.32rem 0.6rem;font-size:0.72rem;border-radius:6px;}
+  .mt{margin-top:1.05rem;}
+  .row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;border:1px solid var(--line);border-left:3px solid #C9CEC6;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.45rem;background:var(--paper);}
+  .row.ok{border-left-color:var(--green);} .row.ko{border-left-color:var(--fire);} .row.rec{border-left-color:#B6BBB2;opacity:0.78;} .row.ext{border-left-color:var(--amber);}
+  .rn{font-weight:600;font-size:0.9rem;} .rs{font-size:0.7rem;color:var(--ink2);margin-top:0.12rem;}
+  .tag{font-family:'Barlow Semi Condensed';font-weight:600;text-transform:uppercase;letter-spacing:0.03em;padding:0.2rem 0.55rem;border-radius:5px;font-size:0.68rem;}
+  .stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.3rem 0 1.05rem;}
+  .stat{border:1px solid var(--line);border-radius:8px;padding:0.55rem;text-align:center;background:var(--paper2);}
+  .stat .v{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.5rem;line-height:1;}
+  .stat .l{font-size:0.62rem;color:var(--ink2);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.2rem;}
+  .note{background:#EAF1F8;border:1px solid #CFE0F0;border-left:3px solid var(--steel);border-radius:8px;padding:0.6rem 0.8rem;font-size:0.76rem;color:#244A73;margin-top:1.05rem;}
+  .veh{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;border:1px solid var(--line);border-radius:8px;margin-bottom:0.4rem;font-size:0.82rem;}
+  .shift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;}
+  .shift-opt{border:1px solid var(--line);border-radius:8px;text-align:center;padding:0.75rem 0;font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.3rem;cursor:pointer;background:var(--paper);}
+  .shift-opt.sel{border-color:var(--fire);background:#FCEBEE;color:var(--fire);}
+  .scard{border:1px solid var(--line);border-radius:10px;padding:0.7rem 0.8rem;margin-bottom:0.55rem;background:var(--paper);}
+  .scard-top{display:flex;align-items:center;gap:0.5rem;}
+  .ferflds{display:flex;gap:0.5rem;margin-top:0.55rem;flex-wrap:wrap;}
+  .ferf{flex:1;min-width:90px;border:1px solid var(--line);border-radius:7px;padding:0.35rem 0.5rem;background:var(--paper2);}
+  .ferf .v{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.02rem;}
+  .salto-row{display:flex;align-items:center;gap:0.5rem;margin-top:0.55rem;padding-top:0.55rem;border-top:1px dashed var(--line);flex-wrap:wrap;}
+  .icon-btn{background:none;border:none;cursor:pointer;color:#9AA0A8;padding:0.2rem;display:inline-flex;} .icon-btn svg{width:17px;height:17px;}
+  .code-row{display:flex;align-items:center;gap:0.6rem;border:1px solid var(--line);border-radius:7px;padding:0.45rem 0.65rem;margin-bottom:0.35rem;font-size:0.82rem;}
+  .modal-bg{position:fixed;inset:0;background:rgba(8,12,20,0.62);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50;}
+  .modal{background:#fff;border-radius:14px;padding:1.1rem;width:100%;max-width:360px;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,0.35);}
+  .modal h3{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.2rem;}
+  .modal .ms{font-size:0.74rem;color:var(--ink2);margin:0.15rem 0 0.85rem;}
+  .modal label{display:block;}
+  .modal input,.modal select{width:100%;padding:0.5rem 0.6rem;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:0.92rem;background:#fff;margin-top:0.2rem;}
+  .codegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.45rem;}
+  .codebtn{border:1px solid var(--line);border-radius:8px;padding:0.5rem 0.2rem;cursor:pointer;text-align:center;background:#fff;font-size:0.72rem;}
+  .codebtn:hover{border-color:var(--fire);}
+  .codebtn .cc{font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.95rem;display:block;}
+  .spin{text-align:center;color:var(--ink2);padding:2rem;font-size:0.85rem;}
+  @media (max-width:560px){.nav .nl{display:none;}.nav svg{width:24px;height:24px;}.h-title{font-size:1.3rem;}.stats3 .v{font-size:1.25rem;}}
+</style>
+</head>
+<body>
+
+<!-- ===================== LOGIN ===================== -->
+<div id="login">
+  <div class="login-card">
+    <div class="badge-vvf">VV<br>F</div>
+    <h1>PRESENZE</h1>
+    <div class="ls">Vigili del Fuoco &middot; Distaccamento di Lentini</div>
+    <label>Utente (email)</label>
+    <input id="liEmail" type="email" autocomplete="username" placeholder="turnod@vvflentini.it">
+    <label>Password</label>
+    <input id="liPass" type="password" autocomplete="current-password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()">
+    <div style="margin-top:1.1rem"><button class="btn btn-fire btn-full" onclick="doLogin()">Accedi</button></div>
+    <div class="login-err" id="liErr"></div>
+    <div id="cfgWarn" class="cfg-warn hide"></div>
+  </div>
+</div>
+
+<!-- ===================== APP ===================== -->
+<div id="app" class="app hide">
+  <div class="header">
+    <div class="top">
+      <div class="brand"><div class="badge-vvf2">VV<br>F</div>
+        <div><div class="h-title">PRESENZE</div><div class="h-sub" id="hSub">&nbsp;</div></div></div>
+      <div class="h-right">
+        <div class="h-status"><span class="dot" id="syncDot"></span> <span id="syncTxt">Firebase</span></div>
+        <button class="logout" onclick="doLogout()">Esci</button>
+      </div>
+    </div>
+    <div class="firestripe"></div>
+  </div>
+  <div class="nav" id="nav"></div>
+  <div class="content" id="content"><div class="spin">Caricamento&hellip;</div></div>
+</div>
+
+<div id="overlay" class="modal-bg hide"><div class="modal" id="modalBody"></div></div>
+
+<script>
+/* ======================= CONFIG ======================= */
+// Configurazione del progetto Firebase "presenze-7ba78" (gia' inserita). La apiKey Web non e' segreta.
+// La sicurezza reale e' data dalle regole del database + dai domini autorizzati in Authentication.
+const firebaseConfig = {
+  apiKey: "AIzaSyAZ94trW8zfyjjH7vx03F09_u8bvqhtmS4",
+  authDomain: "presenze-7ba78.firebaseapp.com",
+  databaseURL: "https://presenze-7ba78-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "presenze-7ba78",
+  storageBucket: "presenze-7ba78.firebasestorage.app",
+  messagingSenderId: "782370422526",
+  appId: "1:782370422526:web:f7b6180cb77fe7031cafaf"
+};
+const ADMIN_EMAIL  = "admin@vvflentini.it";   // account amministratore (vede tutti i turni)
+const EMAIL_DOMAIN = "vvflentini.it";          // convenzione: turnoa@, turnob@, turnoc@, turnod@ + dominio
+const SEDE = "Lentini (2002)";
+
+/* ======================= COSTANTI ======================= */
+const QUALIFICHE=['CR','CSE','CS','VPC','VPE','VP','VV'];
+const RANK={CR:0,CSE:1,CS:2,VPC:3,VPE:4,VP:5,VV:6};
+const DEFAULT_CODICI={
+  L:['Licenza','#E3ECF7','#1F5C99'], M:['Malattia','#F7E3E6','#C8102E'], MB:['Malattia bambino','#FBEBD8','#9A5B00'],
+  SD:['Sost. diurna','#FAF1D6','#876200'], SN:['Sost. notturna','#ECE7F6','#5B3FA0'], DS:['Donazione sangue','#DEF1EC','#137A63'],
+  MI:['Missione','#E4E9F7','#33408F'], RO:['Recupero ore','#EDEFEA','#6B7280'], PF:['Permesso famiglia','#FBE6F0','#9D2B6B'],
+  CP:['Congedo parentale','#ECF5DA','#4C6B1C'], P:['Presente','#E3F1E4','#1E6B39']
+};
+const WDS=['dom','lun','mar','mer','gio','ven','sab'];
+const WDL=['domenica','luned\u00ec','marted\u00ec','mercoled\u00ec','gioved\u00ec','venerd\u00ec','sabato'];
+const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
+const ABSENCE=['L','M','MB','MI','DS','PF','CP','RO'];
+const ICONS={
+ grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>',
+ check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
+ sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="7" y2="7"/><line x1="17" y1="17" x2="19" y2="19"/></svg>',
+ ticket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><line x1="13" y1="6" x2="13" y2="18" stroke-dasharray="2 2"/></svg>',
+ sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.3" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="2.3" fill="currentColor" stroke="none"/></svg>',
+ edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+ trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
+};
+
+/* ======================= MOTORE TURNI ======================= */
+// Validato sul turnario reale (foglio Calendario). ref = 1 gennaio 2026.
+function dayN(y,m,d){ return Math.round((Date.UTC(y,m-1,d)-Date.UTC(2026,0,1))/86400000); }
+function diurnoTurno(n){ return ['B','C','D','A'][((n%4)+4)%4]; }
+function diuSalto(n){ return ((Math.floor((n+1)/4)+5)%8+8)%8+1; }
+function notSalto(n){ return ((Math.floor(n/4)+5)%8+8)%8+1; }
+// per il turno T in un giorno -> {tipo:'G'|'N'|null, salto:1..8}
+function dutyFor(T,y,m,d){
+  const n=dayN(y,m,d);
+  if(diurnoTurno(n)===T) return {tipo:'G',salto:diuSalto(n)};
+  if(diurnoTurno(n-1)===T) return {tipo:'N',salto:notSalto(n)};
+  return {tipo:null,salto:0};
+}
+function workingDays(T,y,m){
+  const out=[],last=new Date(y,m,0).getDate();
+  for(let d=1; d<=last; d++){ const du=dutyFor(T,y,m,d); if(du.tipo){ out.push({day:d, wd:new Date(y,m-1,d).getDay(), tipo:du.tipo, salto:du.salto}); } }
+  return out;
+}
+// Il turno PROVA (sandbox solo-admin) usa il turnario reale del turno D ma scrive su dati isolati (/turni/PROVA).
+function engTurno(){ return S.turno==='PROVA' ? 'D' : S.turno; }
+
+/* ======================= STATO ======================= */
+let auth, db, scopeRefs=[];
+const S={ turno:null, isAdmin:false, email:'', year:2026, month:1, tab:0,
+          personale:{}, codici:{}, cells:{}, note:{}, esterni:{}, mezzi:{}, saltoOv:{} };
+
+function codeColor(c){ const cc=S.codici[c]||DEFAULT_CODICI[c]; return cc?[cc[1],cc[2]]:['#EDEFEA','#6B7280']; }
+function codeLabel(c){ const cc=S.codici[c]||DEFAULT_CODICI[c]; return cc?cc[0]:c; }
+function allCodici(){ const o=Object.assign({},DEFAULT_CODICI,S.codici); delete o.P; return o; }
+function personArr(){ return Object.keys(S.personale).map(id=>Object.assign({id},S.personale[id])).sort((a,b)=>(RANK[a.q]-RANK[b.q])||((a.pos||99)-(b.pos||99))||(''+a.cognome).localeCompare(b.cognome)); }
+function effPos(p){ const ov=S.saltoOv[p.id]; return (ov!=null&&ov!=='')?+ov:(p.pos||0); }
+function cellCode(pid,day){ return (S.cells[pid]&&S.cells[pid][day])||''; }
+
+/* ======================= FIREBASE ======================= */
+function startApp(){
+  if(String(firebaseConfig.apiKey).indexOf('INCOLLA')===0){
+    document.getElementById('cfgWarn').classList.remove('hide');
+    document.getElementById('cfgWarn').innerHTML='Manca la <b>apiKey</b> di Firebase. Apri index.html, cerca <b>INCOLLA_QUI_LA_API_KEY</b> e incolla la chiave dalla Console Firebase (Impostazioni progetto &rarr; Le tue app &rarr; SDK setup).';
+    return;
+  }
+  firebase.initializeApp(firebaseConfig);
+  auth=firebase.auth(); db=firebase.database();
+  auth.onAuthStateChanged(onAuth);
+}
+function onAuth(user){
+  if(!user){ document.getElementById('app').classList.add('hide'); document.getElementById('login').classList.remove('hide'); detach(); return; }
+  S.email=(user.email||'').toLowerCase();
+  S.isAdmin=(S.email===ADMIN_EMAIL.toLowerCase());
+  if(S.isAdmin){ S.turno=S.turno||'A'; }
+  else { const m=S.email.match(/^turno([abcd])@/); S.turno=m?m[1].toUpperCase():null; }
+  document.getElementById('login').classList.add('hide');
+  document.getElementById('app').classList.remove('hide');
+  if(!S.turno){ document.getElementById('content').innerHTML='<div class="note">Questo utente non e\' associato a nessun turno. Usa un indirizzo del tipo <b>turnod@'+EMAIL_DOMAIN+'</b> oppure l\'account amministratore.</div>'; return; }
+  attach();
+}
+function doLogin(){
+  const e=document.getElementById('liEmail').value.trim(), p=document.getElementById('liPass').value;
+  document.getElementById('liErr').textContent='';
+  if(!auth){ document.getElementById('liErr').textContent='Configurazione Firebase mancante.'; return; }
+  auth.signInWithEmailAndPassword(e,p).catch(err=>{ document.getElementById('liErr').textContent='Accesso non riuscito: '+(err.code||err.message); });
+}
+function doLogout(){ if(auth) auth.signOut(); }
+function changePasswordModal(){
+  if(!auth||!auth.currentUser) return;
+  openModal('<h3>Cambia password</h3><div class="ms">'+auth.currentUser.email+'</div>'
+    +'<label class="eyebrow">Password attuale</label><input id="cpOld" type="password" autocomplete="current-password">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Nuova password</label><input id="cpNew" type="password" autocomplete="new-password">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Conferma nuova password</label><input id="cpNew2" type="password" autocomplete="new-password">'
+    +'<div id="cpErr" class="login-err" style="text-align:left;color:#C8102E"></div>'
+    +'<button class="btn btn-fire btn-full" style="margin-top:0.6rem" onclick="doChangePassword()">Aggiorna password</button>');
+}
+function doChangePassword(){
+  const o=val('cpOld'), n=val('cpNew'), n2=val('cpNew2'), err=document.getElementById('cpErr'); err.textContent='';
+  if(n.length<6){ err.textContent='La nuova password deve avere almeno 6 caratteri.'; return; }
+  if(n!==n2){ err.textContent='Le due password non coincidono.'; return; }
+  const u=auth.currentUser, cred=firebase.auth.EmailAuthProvider.credential(u.email,o);
+  u.reauthenticateWithCredential(cred).then(function(){ return u.updatePassword(n); })
+   .then(function(){ closeModal(); alert('Password aggiornata con successo.'); })
+   .catch(function(e){ err.textContent = (e.code==='auth/wrong-password'||e.code==='auth/invalid-credential')?'Password attuale errata.':('Errore: '+(e.code||e.message)); });
+}
+
+function detach(){ scopeRefs.forEach(r=>r.off()); scopeRefs=[]; }
+function attach(){
+  detach();
+  const base='turni/'+S.turno;
+  const yk=S.year, mk=S.month, mbase=base+'/anno/'+yk+'/mesi/'+mk;
+  setSync(true);
+  const bind=(path,key,cb)=>{ const r=db.ref(path); r.on('value',s=>{ S[key]=s.val()||{}; (cb||render)(); }, ()=>setSync(false)); scopeRefs.push(r); };
+  bind(base+'/personale','personale');
+  bind(base+'/codici','codici');
+  bind(base+'/mezzi','mezzi');
+  bind(mbase+'/celle','cells');
+  bind(mbase+'/note','note');
+  bind(mbase+'/esterni','esterni');
+  bind(mbase+'/saltoOv','saltoOv');
+  document.getElementById('hSub').textContent='Turno '+S.turno+(S.isAdmin?' (admin)':'')+' \u00b7 '+MESI[S.month-1]+' '+S.year;
+  render();
+}
+function setSync(ok){ document.getElementById('syncDot').classList.toggle('off',!ok); document.getElementById('syncTxt').textContent=ok?'Firebase':'Offline'; }
+function refMese(){ return 'turni/'+S.turno+'/anno/'+S.year+'/mesi/'+S.month; }
+function changePeriod(){ attach(); }
+
+/* ======================= AZIONI DB ======================= */
+function setCell(pid,day,code){ const r=db.ref(refMese()+'/celle/'+pid+'/'+day); code?r.set(code):r.remove(); closeModal(); }
+function setNote(pid,day,val){ const r=db.ref(refMese()+'/note/'+day+'/'+pid); val?r.set(val):r.remove(); }
+function savePerson(id){
+  const o={q:val('edQual'),cognome:val('edCognome'),nome:val('edNome'),pos:+val('edPos')||0,fSpett:+val('edF0')||0,fRes:+val('edF1')||0,cong:+val('edCong')||0};
+  const ref=db.ref('turni/'+S.turno+'/personale'); (id?ref.child(id):ref.push()).update(o); closeModal();
+}
+function delPerson(id){ if(confirm('Eliminare questa persona?')){ db.ref('turni/'+S.turno+'/personale/'+id).remove(); closeModal(); } }
+function saveCode(){ const c=val('cdCode').toUpperCase().trim(); if(!c) return; db.ref('turni/'+S.turno+'/codici/'+c).set([val('cdLabel')||c, val('cdBg')||'#EDEFEA', val('cdTx')||'#10151E']); closeModal(); }
+function delCode(c){ db.ref('turni/'+S.turno+'/codici/'+c).remove(); closeModal(); }
+function saveMezzo(id){ const o={nome:val('mzNome')}; const ref=db.ref('turni/'+S.turno+'/mezzi'); (id?ref.child(id):ref.push()).update(o); closeModal(); }
+function delMezzo(id){ db.ref('turni/'+S.turno+'/mezzi/'+id).remove(); closeModal(); }
+function toggleMezzoOp(day,id,op){ db.ref(refMese()+'/mezziOp/'+day+'/'+id).set({op:op}); }
+function saveExternal(day){ const o={q:val('exQual'),cognome:val('exCognome'),nome:val('exNome'),prov:val('exProv'),motivo:val('exMot')}; db.ref(refMese()+'/esterni/'+day).push(o); closeModal(); }
+function delExternal(day,eid){ db.ref(refMese()+'/esterni/'+day+'/'+eid).remove(); }
+function applySalto(pid,scope){
+  if(scope==='mese'){ const np=prompt('Nuova posizione di salto per questo mese (1-8, vuoto = nessuno):',''); db.ref(refMese()+'/saltoOv/'+pid).set(np?+np:null); }
+  else { const np=prompt('Nuova posizione di salto permanente (1-8):',S.personale[pid].pos||''); if(np!==null){ db.ref('turni/'+S.turno+'/personale/'+pid+'/pos').set(+np||0); } }
+  closeModal();
+}
+function val(id){ const e=document.getElementById(id); return e?e.value:''; }
+
+/* ======================= RENDER ======================= */
+const TABS=[['grid','Prospetto',scProspetto],['check','Presenze',scPresenze],['sun','Ferie',scFerie],['ticket','Buoni',scBuoni],['sliders','Setup',scSetup]];
+function render(){
+  document.getElementById('nav').innerHTML=TABS.map((t,i)=>'<button class="'+(i===S.tab?'active':'')+'" onclick="go('+i+')">'+ICONS[t[0]]+'<span class="nl">'+t[1]+'</span></button>').join('');
+  document.getElementById('content').innerHTML=TABS[S.tab][2]();
+}
+function go(i){ S.tab=i; render(); }
+
+function periodControls(extra){
+  let years=''; for(let y=2024;y<=2030;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
+  let months=MESI.map((mm,i)=>'<option value="'+(i+1)+'"'+((i+1)===S.month?' selected':'')+'>'+mm.charAt(0).toUpperCase()+mm.slice(1)+'</option>').join('');
+  let turnoSel='';
+  if(S.isAdmin){ turnoSel='<div class="field"><label class="eyebrow">Turno</label><select onchange="S.turno=this.value;changePeriod()">'+['A','B','C','D','PROVA'].map(t=>'<option value="'+t+'"'+(t===S.turno?' selected':'')+'>'+(t==='PROVA'?'PROVA (test)':t)+'</option>').join('')+'</select></div>'; }
+  else { turnoSel='<div class="field"><label class="eyebrow">Turno</label><input value="'+S.turno+'" disabled></div>'; }
+  return '<div class="ctl-row">'+turnoSel
+    +'<div class="field"><label class="eyebrow">Mese</label><select onchange="S.month=+this.value;changePeriod()">'+months+'</select></div>'
+    +'<div class="field"><label class="eyebrow">Anno</label><select onchange="S.year=+this.value;changePeriod()">'+years+'</select></div>'+(extra||'')+'</div>';
+}
+
+function scProspetto(){
+  const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
+  if(!people.length) return periodControls()+'<div class="note">Nessuna persona nel turno. Vai in <b>Setup</b> e aggiungi il personale: l\'ordine seguir\u00e0 la qualifica e le posizioni di salto.</div>';
+  let head='<tr><th class="name"><span class="eyebrow">Personale</span></th>';
+  wd.forEach(c=>{ head+='<th><div class="daynum">'+c.day+'</div><div class="dayw">'+WDS[c.wd]+'</div><span class="gn '+(c.tipo==='G'?'gn-g':'gn-n')+'">'+c.tipo+'</span></th>'; });
+  head+='</tr>';
+  let body='';
+  people.forEach(p=>{
+    let row='<tr><td class="name"><span class="pq">'+p.q+'</span><div class="pname">'+(p.cognome||'')+' '+(p.nome||'').charAt(0)+(p.nome?'.':'')+'</div></td>';
+    wd.forEach(c=>{
+      const isR=(effPos(p)===c.salto);
+      let inner;
+      if(isR) inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+',true)"><span class="rcell">R</span></button>';
+      else { const code=cellCode(p.id,c.day);
+        if(!code) inner='<button class="cell empty" onclick="cellModal(\''+p.id+'\','+c.day+',false)">\u00b7</button>';
+        else { const col=codeColor(code); inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+',false)"><span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+code+'</span></button>'; }
+      }
+      row+='<td class="daycell">'+inner+'</td>';
+    });
+    body+=row+'</tr>';
+  });
+  return periodControls()
+    +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'
+    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto turno (automatico) \u00b7 tocca una casella per impostare un codice</div>'
+    +legendHtml()
+    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Esporta prospetto / richiesta ferie (PDF)</button>';
+}
+function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="background:'+c[k][1]+'"></b>'+k+' '+c[k][0].toLowerCase()+'</span>'; }); s+='<span><b style="background:#EDEFEA;border:1px dashed #C2C6BD"></b>R recupero (auto)</span></div>'; return s; }
+
+function cellModal(pid,day,isR){
+  const p=S.personale[pid], du=dutyFor(engTurno(),S.year,S.month,day), cur=cellCode(pid,day);
+  const c=allCodici();
+  let grid='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'\')"><span class="cc">\u2014</span>Vuota</button>';
+  grid+='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'P\')"><span class="cc">P</span>Presente</button>';
+  Object.keys(c).forEach(k=>{ const b=(k===cur)?'border-color:#C8102E;background:#FCEBEE;':''; grid+='<button class="codebtn" style="'+b+'" onclick="setCell(\''+pid+'\','+day+',\''+k+'\')"><span class="cc">'+k+'</span>'+c[k][0]+'</button>'; });
+  let salto='<div class="salto-row"><span class="eyebrow">Salto turno</span>'
+    +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'mese\')">Solo questo mese</button>'
+    +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'sempre\')">In generale</button></div>';
+  openModal('<h3>'+(isR?'Salto turno':'Imposta codice')+'</h3><div class="ms">'+(p.cognome||'')+' '+(p.nome||'')+' \u00b7 '+day+' '+MESI[S.month-1]+' \u00b7 '+(du.tipo==='G'?'diurno 08-20':'notturno 20-08')+'</div>'
+    +(isR?'<div class="note" style="margin:0 0 0.8rem">Questa giornata \u00e8 un salto turno calcolato automaticamente. Per modificarlo usa i pulsanti qui sotto.</div>':'<div class="codegrid">'+grid+'</div>')
+    +salto);
+}
+
+function dayRoster(day){ // per la scheda presenze
+  const du=dutyFor(engTurno(),S.year,S.month,day);
+  return personArr().map(p=>{ const isR=(effPos(p)===du.salto); const code=isR?'R':cellCode(p.id,day); return {p,isR,code,du}; });
+}
+function scPresenze(){
+  const wd=workingDays(engTurno(),S.year,S.month);
+  if(!wd.length) return periodControls()+'<div class="note">Nessuna giornata di servizio per questo turno nel mese selezionato.</div>';
+  if(!S.curDay || !wd.find(w=>w.day===S.curDay)) S.curDay=wd[0].day;
+  const du=dutyFor(engTurno(),S.year,S.month,S.curDay);
+  const dd=new Date(S.year,S.month-1,S.curDay);
+  let dayOpts=wd.map(w=>'<option value="'+w.day+'"'+(w.day===S.curDay?' selected':'')+'>'+w.day+' '+MESI[S.month-1]+' ('+w.tipo+')</option>').join('');
+  const ros=dayRoster(S.curDay);
+  let pres=0,ass=0,rec=0;
+  let list=ros.map(r=>{
+    const note=(S.note[S.curDay]&&S.note[S.curDay][r.p.id])||'';
+    let cls,tag;
+    if(r.isR){ rec++; cls='rec'; tag='<span class="tag" style="background:#EDEFEA;color:#737A70">Recupero</span>'; }
+    else if(r.code && ABSENCE.indexOf(r.code)>=0){ ass++; const col=codeColor(r.code); cls='ko'; tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">Assente \u00b7 '+r.code+'</span>'; }
+    else { pres++; cls='ok'; tag='<span class="tag" style="background:#E3F1E4;color:#1E6B39">Presente</span>'; }
+    return '<div class="row '+cls+'"><div><div class="rn">'+r.p.q+' \u00b7 '+(r.p.cognome||'')+' '+(r.p.nome||'')+'</div>'
+      +'<input style="border:none;background:none;font-size:0.72rem;color:#5B636E;width:100%;margin-top:0.1rem" placeholder="note (es. autista, capo partenza)" value="'+note.replace(/"/g,'&quot;')+'" onchange="setNote(\''+r.p.id+'\','+S.curDay+',this.value)"></div>'+tag+'</div>';
+  }).join('');
+  // esterni
+  const ext=(S.esterni[S.curDay])||{};
+  let extHtml=Object.keys(ext).map(eid=>{ const e=ext[eid]; const b=e.motivo==='Straordinario'?['#FAF1D6','#876200','1 buono']:['#EDEFEA','#737A70','0 buoni']; return '<div class="row ext"><div><div class="rn">'+e.q+' \u00b7 '+e.cognome+' '+e.nome+'</div><div class="rs">'+(e.prov||'')+' \u00b7 '+e.motivo+'</div></div><div style="display:flex;gap:0.4rem;align-items:center"><span class="tag" style="background:'+b[0]+';color:'+b[1]+'">'+e.motivo+' \u00b7 '+b[2]+'</span><button class="icon-btn" onclick="delExternal('+S.curDay+',\''+eid+'\')">'+ICONS.trash+'</button></div></div>'; }).join('');
+  // mezzi
+  const mezzi=S.mezzi||{}, mop=(S.mezziOp&&S.mezziOp[S.curDay])||{};
+  let mezHtml=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return '<div class="veh"><span>'+(mezzi[id].nome||'')+'</span><button class="btn btn-xs '+(op?'btn-out':'btn-out')+'" style="'+(op?'color:#1E6B39;border-color:#9FCBAA':'color:#C8102E;border-color:#E3A6AE')+'" onclick="toggleMezzoOp('+S.curDay+',\''+id+'\','+(!op)+')">'+(op?'Operativo':'Non operativo')+'</button></div>'; }).join('');
+  if(!Object.keys(mezzi).length) mezHtml='<div class="rs">Nessun mezzo configurato (aggiungili in Setup).</div>';
+  return periodControls('<div class="field" style="flex:1.4"><label class="eyebrow">Giornata</label><select onchange="S.curDay=+this.value;render()">'+dayOpts+'</select></div>')
+    +'<div class="ms" style="font-size:0.78rem;color:#5B636E;margin:-0.5rem 0 0.8rem">'+WDL[dd.getDay()]+' '+S.curDay+' '+MESI[S.month-1]+' '+S.year+' \u00b7 servizio '+(du.tipo==='G'?'diurno 08:00-20:00':'notturno 20:00-08:00')+'</div>'
+    +'<div class="stats3"><div class="stat"><div class="v" style="color:#2C8B4B">'+pres+'</div><div class="l">Presenti</div></div><div class="stat"><div class="v" style="color:#C8102E">'+ass+'</div><div class="l">Assenti</div></div><div class="stat"><div class="v" style="color:#737A70">'+rec+'</div><div class="l">Recupero</div></div></div>'
+    +list
+    +'<div class="sec-h"><span class="eyebrow">Personale esterno presso Lentini</span></div>'+(extHtml||'')+'<button class="btn btn-out btn-full" onclick="externalModal('+S.curDay+')" style="margin-top:0.3rem">+ Aggiungi personale esterno</button>'
+    +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezHtml
+    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'pres\','+S.curDay+')">'+ICONS.check+' Genera PDF presenze del giorno</button>';
+}
+function externalModal(day){
+  let qo=QUALIFICHE.map(q=>'<option>'+q+'</option>').join('');
+  openModal('<h3>Personale esterno</h3><div class="ms">'+day+' '+MESI[S.month-1]+'</div>'
+    +'<label class="eyebrow">Qualifica</label><select id="exQual">'+qo+'</select>'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="exCognome">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Nome</label><input id="exNome">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Provenienza</label><input id="exProv" placeholder="es. Turno A">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Motivo</label><select id="exMot"><option>Straordinario</option><option>Sostituzione</option></select>'
+    +'<button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveExternal('+day+')">Aggiungi</button>');
+}
+
+function scFerie(){
+  const wd=workingDays(engTurno(),S.year,S.month);
+  return periodControls()
+    +'<div class="note" style="margin-top:0">Il prospetto da inviare al Capo Turno (entro il 20 per il mese successivo) mostra le giornate di servizio, i <b>salti (R)</b> e le <b>ferie (L)</b>. Malattie e sostituzioni si registrano durante il mese e non compaiono qui.</div>'
+    +'<div class="sec-h"><span class="eyebrow">Saldi ferie del turno</span></div>'
+    +personArr().map(p=>{ const res=(p.fSpett||0)+(p.fRes||0)-ferieGodute(p.id); return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">Spettanti '+S.year+': '+(p.fSpett||0)+' \u00b7 Residue '+(S.year-1)+': '+(p.fRes||0)+' \u00b7 Godute (anno): n.d.'+(p.cong?' \u00b7 Congedo: '+p.cong+' gg':'')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.3rem;color:#1F5C99;line-height:1">'+res+'</div><div class="rs">residue (mese)</div></div></div>'; }).join('')
+    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Genera PDF prospetto / richiesta ferie</button>';
+}
+function ferieGodute(pid){ let n=0; const c=S.cells[pid]||{}; Object.keys(c).forEach(d=>{ if(c[d]==='L') n++; }); return n; }
+
+function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
+  const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0;
+  wd.forEach(c=>{ if(effPos(p)===c.salto) return; const code=cellCode(p.id,c.day); if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
+  return {pres,sd,sn,tot:pres+2*sd+sn};
+}
+function scBuoni(){
+  const people=personArr(); let tot=0;
+  let rows=people.map(p=>{ const b=buoniPerson(p); tot+=b.tot; let bd=[b.pres+' presenze']; if(b.sd)bd.push(b.sd+' SD'); if(b.sn)bd.push(b.sn+' SN'); return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">'+bd.join(' \u00b7 ')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b.tot+'</div><div class="rs">buoni</div></div></div>'; }).join('');
+  // esterni di tutto il mese
+  let extTot=0, extRows='';
+  Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]; Object.keys(e).forEach(eid=>{ const x=e[eid]; const b=x.motivo==='Straordinario'?1:0; extTot+=b; extRows+='<div class="row ext"><div><div class="rn">'+x.q+' \u00b7 '+x.cognome+' '+x.nome+'</div><div class="rs">'+day+' '+MESI[S.month-1]+' \u00b7 '+(x.prov||'')+' \u00b7 '+x.motivo+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; }); });
+  tot+=extTot;
+  return periodControls()
+    +'<div class="sec-h"><span class="eyebrow">Personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
+    +(extRows?'<div class="sec-h"><span class="eyebrow">Personale esterno</span></div>'+extRows:'')
+    +'<div class="row" style="border-left:3px solid #C8102E;background:#FCEBEE"><div class="rn cond" style="font-size:1.05rem">TOTALE TURNO '+S.turno+'</div><div class="cond" style="font-weight:700;font-size:1.6rem;color:#C8102E">'+tot+'</div></div>'
+    +'<div class="note">Presente = 1 \u00b7 sost. diurna = 2 \u00b7 sost. notturna = 1 \u00b7 esterno in straordinario = 1 \u00b7 esterno in sostituzione = 0.</div>'
+    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'buoni\')">'+ICONS.ticket+' Genera PDF buoni pasto</button>';
+}
+
+function scSetup(){
+  const people=personArr();
+  let staff=people.map(p=>'<div class="scard"><div class="scard-top"><span class="pq">'+p.q+'</span><span style="flex:1;font-weight:600">'+(p.cognome||'')+' '+(p.nome||'')+'</span>'
+    +'<button class="icon-btn" onclick="personModal(\''+p.id+'\')">'+ICONS.edit+'</button><button class="icon-btn" onclick="delPerson(\''+p.id+'\')">'+ICONS.trash+'</button></div>'
+    +'<div class="ferflds"><div class="ferf"><span class="eyebrow">Posizione salto</span><div class="v">'+(p.pos||'\u2014')+'</div></div>'
+    +'<div class="ferf"><span class="eyebrow">Ferie spett. '+S.year+'</span><div class="v">'+(p.fSpett||0)+'</div></div>'
+    +'<div class="ferf"><span class="eyebrow">Ferie res. '+(S.year-1)+'</span><div class="v">'+(p.fRes||0)+'</div></div></div>'
+    +'<div class="salto-row"><span class="eyebrow">Salto turno</span><button class="btn btn-out btn-xs" onclick="applySalto(\''+p.id+'\',\'mese\')">Solo questo mese</button><button class="btn btn-out btn-xs" onclick="applySalto(\''+p.id+'\',\'sempre\')">In generale</button></div></div>').join('');
+  const c=allCodici();
+  let codes=Object.keys(c).map(k=>'<div class="code-row"><span class="chipc" style="background:'+c[k][1]+';color:'+c[k][2]+'">'+k+'</span><span style="flex:1">'+c[k][0]+'</span>'+(DEFAULT_CODICI[k]?'':'<button class="icon-btn" onclick="delCode(\''+k+'\')">'+ICONS.trash+'</button>')+'</div>').join('');
+  let mezzi=Object.keys(S.mezzi||{}).map(id=>'<div class="code-row"><span style="flex:1">'+(S.mezzi[id].nome||'')+'</span><button class="icon-btn" onclick="mezzoModal(\''+id+'\')">'+ICONS.edit+'</button><button class="icon-btn" onclick="delMezzo(\''+id+'\')">'+ICONS.trash+'</button></div>').join('');
+  return '<div class="note" style="margin-top:0">Le persone e le ferie impostate qui alimentano prospetto, presenze e buoni. La <b>posizione</b> (1-8) determina i salti turno calcolati automaticamente.</div>'
+    +'<div class="sec-h"><span class="eyebrow">Personale del turno '+S.turno+'</span></div>'+staff
+    +'<button class="btn btn-out btn-full" onclick="personModal(null)" style="margin-top:0.3rem">+ Aggiungi persona</button>'
+    +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezzi+'<button class="btn btn-out btn-full" onclick="mezzoModal(null)" style="margin-top:0.3rem">+ Aggiungi mezzo</button>'
+    +'<div class="sec-h"><span class="eyebrow">Codici assenza</span></div>'+codes+'<button class="btn btn-out btn-full" onclick="codeModal()" style="margin-top:0.3rem">+ Aggiungi codice</button>'
+    +'<div class="sec-h"><span class="eyebrow">Account</span></div><div class="row"><div><div class="rn">'+S.email+'</div><div class="rs">'+(S.isAdmin?'Amministratore (tutti i turni)':'Turno '+S.turno)+'</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
+    +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+SEDE+'</span><span class="tag" style="background:#EDEFEA;color:#737A70">Fissa</span></div>';
+}
+function personModal(id){
+  const p=id?S.personale[id]:{q:'VP',cognome:'',nome:'',pos:'',fSpett:0,fRes:0,cong:0};
+  let qo=QUALIFICHE.map(q=>'<option value="'+q+'"'+(q===p.q?' selected':'')+'>'+q+'</option>').join('');
+  let po='<option value="">\u2014</option>'; for(let i=1;i<=8;i++) po+='<option value="'+i+'"'+(p.pos==i?' selected':'')+'>'+i+'</option>';
+  openModal('<h3>'+(id?'Modifica persona':'Nuova persona')+'</h3><div class="ms">Qualifica, nominativo, posizione e ferie</div>'
+    +'<label class="eyebrow">Qualifica</label><select id="edQual">'+qo+'</select>'
+    +'<div style="display:flex;gap:0.5rem"><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="edCognome" value="'+(p.cognome||'')+'"></div><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Nome</label><input id="edNome" value="'+(p.nome||'')+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Pos.</label><select id="edPos">'+po+'</select></div></div>'
+    +'<div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Ferie spett. '+S.year+'</label><input id="edF0" type="number" value="'+(p.fSpett||0)+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Ferie res. '+(S.year-1)+'</label><input id="edF1" type="number" value="'+(p.fRes||0)+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Congedo</label><input id="edCong" type="number" value="'+(p.cong||0)+'"></div></div>'
+    +'<button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="savePerson('+(id?'\''+id+'\'':'null')+')">Salva</button>'
+    +(id?'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="delPerson(\''+id+'\')">Elimina</button>':''));
+}
+function codeModal(){ openModal('<h3>Nuovo codice assenza</h3><div class="ms">Sigla, descrizione e colori</div><label class="eyebrow">Sigla</label><input id="cdCode" maxlength="3" placeholder="es. AS"><label class="eyebrow" style="margin-top:0.5rem">Descrizione</label><input id="cdLabel"><div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore sfondo</label><input id="cdBg" type="color" value="#EDEFEA"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore testo</label><input id="cdTx" type="color" value="#10151E"></div></div><button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveCode()">Salva</button>'); }
+function mezzoModal(id){ const m=id?S.mezzi[id]:{nome:''}; openModal('<h3>'+(id?'Modifica mezzo':'Nuovo mezzo')+'</h3><label class="eyebrow">Denominazione</label><input id="mzNome" value="'+(m.nome||'')+'" placeholder="es. APS/MAN VF 31698"><button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveMezzo('+(id?'\''+id+'\'':'null')+')">Salva</button>'); }
+
+function openModal(html){ document.getElementById('modalBody').innerHTML=html; document.getElementById('overlay').classList.remove('hide'); }
+function closeModal(){ document.getElementById('overlay').classList.add('hide'); }
+document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
+
+/* ======================= PDF ======================= */
+function pdfHeader(doc,title,subtitle,W){
+  doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(91,99,110);
+  doc.text('DIPARTIMENTO DEI VIGILI DEL FUOCO, DEL SOCCORSO PUBBLICO E DELLA DIFESA CIVILE',W/2,12,{align:'center'});
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30);
+  doc.text('COMANDO PROVINCIALE VIGILI DEL FUOCO - SIRACUSA',W/2,17,{align:'center'});
+  doc.setDrawColor(200,16,46); doc.setLineWidth(0.7); doc.line(14,20,W-14,20);
+  doc.setFont('helvetica','bold'); doc.setFontSize(14); doc.setTextColor(200,16,46);
+  doc.text(title,W/2,28,{align:'center'});
+  doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(16,21,30);
+  doc.text(subtitle,W/2,33.5,{align:'center'});
+}
+function pdfSign(doc,placeDate,W,y,signer){
+  doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(91,99,110);
+  doc.text(placeDate,16,y);
+  doc.text('Il Capo Turno',W-66,y);
+  doc.text('______________________________',W-66,y+8);
+  if(signer){ doc.setFont('helvetica','bold'); doc.setTextColor(16,21,30); doc.text(signer,W-66,y+13); doc.setFont('helvetica','normal'); doc.setTextColor(91,99,110); }
+}
+function hexRGB(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
+
+/* Firma: chiede quale Capo Squadra genera il documento, poi produce il PDF */
+let _pendingPdf=null, _signerList=[];
+function askSigner(kind,arg){
+  const cs=personArr().filter(p=>['CR','CSE','CS'].indexOf(p.q)>=0);
+  _signerList = cs.length?cs:personArr();
+  if(!_signerList.length){ alert('Aggiungi prima il personale nel Setup.'); return; }
+  _pendingPdf={kind,arg};
+  let btns=_signerList.map((p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+p.q+'</span>'+(p.cognome||'')+' '+(p.nome||'')+'</button>').join('');
+  openModal('<h3>Chi firma il documento?</h3><div class="ms">Seleziona il Capo Squadra che lo sta generando</div>'+btns
+    +'<div class="cap" style="margin-top:0.4rem">'+(cs.length?'Qualifiche CS / CSE / CR':'Nessun CS in elenco: mostro tutto il personale')+'</div>');
+}
+function doSign(i){
+  const p=_signerList[i]; const s=p.q+' '+(p.cognome||'')+' '+(p.nome||''); closeModal();
+  const pp=_pendingPdf||{}; if(pp.kind==='pres') pdfPresenze(pp.arg,s); else if(pp.kind==='ferie') pdfFerie(s); else if(pp.kind==='buoni') pdfBuoni(s);
+}
+
+function pdfPresenze(day,signer){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF('p','mm','a4'); const W=210;
+  const du=dutyFor(engTurno(),S.year,S.month,day), dd=new Date(S.year,S.month-1,day);
+  pdfHeader(doc,'PROSPETTO PRESENZE - TURNO '+S.turno, SEDE+'  -  '+WDL[dd.getDay()]+' '+day+' '+MESI[S.month-1]+' '+S.year+'  -  servizio '+(du.tipo==='G'?'diurno 08:00 / 20:00':'notturno 20:00 / 08:00'),W);
+  const ros=dayRoster(day); let body=[],pres=0,ass=0,rec=0;
+  ros.forEach(r=>{ const note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
+    if(r.isR){ p_=' '; a_='RECUPERO'; rec++; } else if(ABSENCE.indexOf(r.code)>=0){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; } else { p_='SI'; a_=''; pres++; }
+    body.push([r.p.q,(r.p.cognome||'')+' '+(r.p.nome||''),p_,a_,note]); });
+  Object.keys(S.esterni[day]||{}).forEach(eid=>{ const e=S.esterni[day][eid]; pres++; body.push([e.q,e.cognome+' '+e.nome+' ('+(e.prov||'')+')','SI',e.motivo.toUpperCase(),'esterno']); });
+  doc.autoTable({ startY:38, head:[['Qualifica','Nominativo','Presente','Assente per causa','Note']], body:body,
+    theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,textColor:[16,21,30],lineColor:[154,160,168],lineWidth:0.2},
+    headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'},
+    alternateRowStyles:{fillColor:[246,247,244]},
+    columnStyles:{0:{halign:'center',cellWidth:22},1:{cellWidth:60},2:{halign:'center',cellWidth:22,fontStyle:'bold'},3:{cellWidth:45},4:{textColor:[91,99,110]}} });
+  let y=doc.lastAutoTable.finalY+5;
+  doc.setFontSize(9); doc.setTextColor(16,21,30); doc.setFont('helvetica','normal');
+  doc.text('Totale presenti: '+pres+'      Totale assenti: '+ass+'      In recupero: '+rec,16,y); y+=7;
+  const mezzi=S.mezzi||{}, mop=(S.mezziOp&&S.mezziOp[day])||{};
+  if(Object.keys(mezzi).length){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('ELENCO DEI MEZZI OPERATIVI',16,y); y+=2;
+    let mb=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return [mezzi[id].nome||'',op?'SI':'NO',op?'':'non operativo']; });
+    doc.autoTable({ startY:y, head:[['Automezzo','Operativit\u00e0','Note']], body:mb, theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,lineColor:[154,160,168],lineWidth:0.2}, headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'}, alternateRowStyles:{fillColor:[246,247,244]}, columnStyles:{0:{cellWidth:80},1:{halign:'center',cellWidth:30,fontStyle:'bold'}} });
+    y=doc.lastAutoTable.finalY; }
+  pdfSign(doc,'Siracusa, '+day+' '+MESI[S.month-1]+' '+S.year,W,y+14,signer);
+  doc.save('presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf');
+}
+
+function pdfFerie(signer){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF('l','mm','a4'); const W=297;
+  pdfHeader(doc,'PROSPETTO MENSILE - RICHIESTA FERIE - TURNO '+S.turno, SEDE+'  -  '+MESI[S.month-1]+' '+S.year+'  -  da inviare al Capo Turno entro il 20 del mese precedente',W);
+  const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
+  let head=[['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo))];
+  let body=[], cellMeta={};
+  people.forEach((p,ri)=>{ let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.'];
+    wd.forEach((c,ci)=>{ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show=isR?'R':(code==='L'?'L':''); row.push(show); cellMeta[ri+'_'+(ci+1)]=show; }); body.push(row); });
+  doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
+    styles:{font:'helvetica',fontSize:8,halign:'center',valign:'middle',cellPadding:1,lineColor:[154,160,168],lineWidth:0.2,textColor:[16,21,30]},
+    headStyles:{fillColor:[239,240,236],textColor:[16,21,30],fontStyle:'bold',halign:'center',fontSize:7.5},
+    columnStyles:{0:{halign:'left',cellWidth:46,fontSize:8.5}},
+    didParseCell:function(d){ if(d.section==='body' && d.column.index>0){ const v=cellMeta[d.row.index+'_'+d.column.index]; if(v==='R'){ d.cell.styles.fillColor=[237,239,234]; } else if(v==='L'){ d.cell.styles.fillColor=[227,236,247]; d.cell.styles.textColor=[31,92,153]; } d.cell.styles.fontStyle='bold'; } } });
+  let y=doc.lastAutoTable.finalY+7;
+  doc.setFontSize(8); doc.setTextColor(91,99,110); doc.setFont('helvetica','normal');
+  doc.text('L = ferie     R = salto turno     G = diurno 08-20     N = notturno 20-08',16,y); y+=6;
+  doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(16,21,30); doc.text('FERIE RICHIESTE PER IL MESE',16,y); y+=5;
+  let fl=[]; people.forEach(p=>{ const ld=wd.filter(c=>cellCode(p.id,c.day)==='L').map(c=>c.day); if(ld.length) fl.push((p.cognome||'')+' '+(p.nome||'')+': '+ld.join('-')+' '+MESI[S.month-1]); });
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.text(fl.length?fl.join('     '):'Nessuna richiesta.',16,y); y+=5;
+  doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text('Malattie, missioni e sostituzioni non sono riportate: vengono registrate durante il mese.',16,y);
+  pdfSign(doc,'Siracusa, '+MESI[S.month-1]+' '+S.year,W,y+12,signer);
+  doc.save('prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+}
+
+function pdfBuoni(signer){
+  const {jsPDF}=window.jspdf; const doc=new jsPDF('l','mm','a4'); const W=297;
+  pdfHeader(doc,'BUONI PASTO - TURNO '+S.turno, SEDE+'  -  '+MESI[S.month-1]+' '+S.year+'  -  riepilogo mensile delle presenze',W);
+  const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
+  const last=wd.length; // indice colonna "Buoni"
+  let head=[['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo)).concat(['Buoni'])];
+  let body=[], meta={}, totTurno=0;
+  people.forEach((p,ri)=>{
+    let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.']; let tot=0;
+    wd.forEach((c,ci)=>{ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show,val;
+      if(isR){ show='R'; val=0; }
+      else if(code==='SD'){ show='SD'; val=2; }
+      else if(code==='SN'){ show='SN'; val=1; }
+      else if(ABSENCE.indexOf(code)>=0){ show=code; val=0; }
+      else { show=''; val=1; }
+      tot+=val; meta[ri+'_'+(ci+1)]=show; row.push(show);
+    });
+    row.push(String(tot)); totTurno+=tot; body.push(row);
+  });
+  doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
+    styles:{font:'helvetica',fontSize:7.5,halign:'center',valign:'middle',cellPadding:0.8,lineColor:[154,160,168],lineWidth:0.2,textColor:[16,21,30]},
+    headStyles:{fillColor:[239,240,236],textColor:[16,21,30],fontStyle:'bold',halign:'center',fontSize:7},
+    columnStyles:Object.assign({0:{halign:'left',cellWidth:44,fontSize:8}},(function(){var o={};o[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};return o;})()),
+    didParseCell:function(d){ if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index]; if(v==='R'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];} else if(v==='SD'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];} else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];} else if(v&&v!==''){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];} d.cell.styles.fontStyle='bold'; } } });
+  let y=doc.lastAutoTable.finalY+6;
+  // personale esterno (buoni da straordinario)
+  let extTot=0, extLines=[];
+  Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]; Object.keys(e).forEach(eid=>{ const x=e[eid]; const b=x.motivo==='Straordinario'?1:0; extTot+=b; extLines.push(x.q+' '+x.cognome+' '+x.nome+' ('+day+' '+MESI[S.month-1].substr(0,3)+', '+x.motivo+'): '+b); }); });
+  if(extLines.length){ doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(16,21,30); doc.text('Personale esterno',16,y); y+=4; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text(extLines.join('     '),16,y); y+=6; }
+  const grand=totTurno+extTot;
+  doc.setFillColor(252,235,238); doc.rect(14,y,W-28,9,'F'); doc.setDrawColor(154,160,168); doc.setLineWidth(0.3); doc.rect(14,y,W-28,9,'S');
+  doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
+  doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(grand),W-20,y+6.5,{align:'right'}); y+=14;
+  doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
+  doc.text('Vuoto = presente (1 buono)    SD = sost. diurna (2)    SN = sost. notturna (1)    R = recupero (0)    sigle assenza (0)    esterno straordinario (1), sostituzione (0).',16,y);
+  pdfSign(doc,'Siracusa, '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
+  doc.save('buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+}
+
+/* attach extra month listeners for mezziOp */
+const _attach=attach;
+attach=function(){ _attach(); const r=db.ref(refMese()+'/mezziOp'); r.on('value',s=>{S.mezziOp=s.val()||{}; if(S.tab===1) render();}); scopeRefs.push(r); };
+
+window.addEventListener('load',startApp);
+</script>
+</body>
+</html>
