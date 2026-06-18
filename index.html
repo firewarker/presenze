@@ -362,9 +362,18 @@ function scProspetto(){
     });
     body+=row+'</tr>';
   });
+  let extBody='';
+  esterniRows().forEach(x=>{
+    let r='<tr><td class="name" style="background:#FFFBF2"><span class="pq" style="background:#E0A314">EXT</span><div class="pname">'+(x.cognome||'')+' '+(x.nome||'').charAt(0)+(x.nome?'.':'')+'</div><div class="rs" style="font-size:0.56rem;color:#9AA0A8">'+(x.prov||'esterno')+'</div></td>';
+    wd.forEach(c=>{ const mot=x.days[c.day]; let inner='<span class="empty">\u00b7</span>';
+      if(mot){ const col=(mot==='Straordinario')?['#FAF1D6','#876200']:['#EDEFEA','#737A70']; inner='<span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+(mot==='Straordinario'?'ST':'SO')+'</span>'; }
+      r+='<td class="daycell">'+inner+'</td>';
+    });
+    extBody+=r+'</tr>';
+  });
   return periodControls()
-    +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+'</tbody></table></div>'
-    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto turno (automatico) \u00b7 tocca una casella per impostare un codice</div>'
+    +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+extBody+'</tbody></table></div>'
+    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto (auto) \u00b7 EXT = personale esterno (ST straordinario, SO sostituzione) \u2014 si gestiscono in Presenze</div>'
     +legendHtml()
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Esporta prospetto / richiesta ferie (PDF)</button>';
 }
@@ -442,6 +451,17 @@ function scFerie(){
 }
 function ferieGodute(pid){ let n=0; const c=S.cells[pid]||{}; Object.keys(c).forEach(d=>{ if(c[d]==='L') n++; }); return n; }
 
+function rk(q){ return (RANK[q]!==undefined)?RANK[q]:99; }
+function esterniRows(){ // raggruppa gli esterni del mese per persona: {q,cognome,nome,prov,days:{day:motivo}}
+  const map={};
+  Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]||{}; Object.keys(e).forEach(eid=>{ const x=e[eid]||{};
+    const k=(x.q||'')+'|'+((x.cognome||'').trim().toLowerCase())+'|'+((x.nome||'').trim().toLowerCase());
+    if(!map[k]) map[k]={q:x.q||'',cognome:x.cognome||'',nome:x.nome||'',prov:x.prov||'',days:{}};
+    map[k].days[+day]=x.motivo||'Straordinario'; if(!map[k].prov && x.prov) map[k].prov=x.prov;
+  }); });
+  return Object.keys(map).sort((a,b)=>rk(map[a].q)-rk(map[b].q)).map(k=>map[k]);
+}
+function esternoBuoni(days){ let t=0; Object.keys(days).forEach(d=>{ if(days[d]==='Straordinario') t++; }); return t; }
 function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
   const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0;
   wd.forEach(c=>{ if(effPos(p)===c.salto) return; const code=cellCode(p.id,c.day); if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
@@ -450,9 +470,10 @@ function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
 function scBuoni(){
   const people=personArr(); let tot=0;
   let rows=people.map(p=>{ const b=buoniPerson(p); tot+=b.tot; let bd=[b.pres+' presenze']; if(b.sd)bd.push(b.sd+' SD'); if(b.sn)bd.push(b.sn+' SN'); return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">'+bd.join(' \u00b7 ')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b.tot+'</div><div class="rs">buoni</div></div></div>'; }).join('');
-  // esterni di tutto il mese
+  // esterni del mese, raggruppati per persona
   let extTot=0, extRows='';
-  Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]; Object.keys(e).forEach(eid=>{ const x=e[eid]; const b=x.motivo==='Straordinario'?1:0; extTot+=b; extRows+='<div class="row ext"><div><div class="rn">'+x.q+' \u00b7 '+x.cognome+' '+x.nome+'</div><div class="rs">'+day+' '+MESI[S.month-1]+' \u00b7 '+(x.prov||'')+' \u00b7 '+x.motivo+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; }); });
+  esterniRows().forEach(x=>{ const b=esternoBuoni(x.days); extTot+=b; const dl=Object.keys(x.days).sort((a,b)=>a-b).map(d=>d+(x.days[d]==='Straordinario'?'\u00b7str':'\u00b7sos')).join(', ');
+    extRows+='<div class="row ext"><div><div class="rn">'+x.q+' \u00b7 '+x.cognome+' '+x.nome+'</div><div class="rs">'+(x.prov||'esterno')+' \u00b7 giorni '+dl+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; });
   tot+=extTot;
   return periodControls()
     +'<div class="sec-h"><span class="eyebrow">Personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
@@ -593,9 +614,9 @@ function pdfBuoni(signer){
   const last=wd.length; // indice colonna "Buoni"
   let head=[['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo)).concat(['Buoni'])];
   let body=[], meta={}, totTurno=0;
-  people.forEach((p,ri)=>{
+  people.forEach(function(p){ const ri=body.length;
     let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.']; let tot=0;
-    wd.forEach((c,ci)=>{ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show,val;
+    wd.forEach(function(c,ci){ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show,val;
       if(isR){ show='R'; val=0; }
       else if(code==='SD'){ show='SD'; val=2; }
       else if(code==='SN'){ show='SN'; val=1; }
@@ -605,17 +626,26 @@ function pdfBuoni(signer){
     });
     row.push(String(tot)); totTurno+=tot; body.push(row);
   });
+  const nPers=body.length;
+  esterniRows().forEach(function(x){ const ri=body.length; const bt=esternoBuoni(x.days);
+    let row=['EXT '+x.q+' '+(x.cognome||'')+' '+(x.nome||'').charAt(0)+'.'];
+    wd.forEach(function(c,ci){ const mot=x.days[c.day]; const show=mot?(mot==='Straordinario'?'ST':'SO'):''; meta[ri+'_'+(ci+1)]=show; row.push(show); });
+    row.push(String(bt)); totTurno+=bt; body.push(row);
+  });
   doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
     styles:{font:'helvetica',fontSize:7.5,halign:'center',valign:'middle',cellPadding:0.8,lineColor:[154,160,168],lineWidth:0.2,textColor:[16,21,30]},
     headStyles:{fillColor:[239,240,236],textColor:[16,21,30],fontStyle:'bold',halign:'center',fontSize:7},
     columnStyles:Object.assign({0:{halign:'left',cellWidth:44,fontSize:8}},(function(){var o={};o[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};return o;})()),
-    didParseCell:function(d){ if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index]; if(v==='R'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];} else if(v==='SD'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];} else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];} else if(v&&v!==''){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];} d.cell.styles.fontStyle='bold'; } } });
+    didParseCell:function(d){
+      if(d.section==='body' && d.column.index===0 && d.row.index>=nPers){ d.cell.styles.fillColor=[255,251,242]; d.cell.styles.textColor=[120,98,0]; }
+      if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index];
+        if(v==='R'||v==='SO'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];}
+        else if(v==='SD'||v==='ST'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];}
+        else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];}
+        else if(v&&v!==''){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];}
+        d.cell.styles.fontStyle='bold'; } } });
   let y=doc.lastAutoTable.finalY+6;
-  // personale esterno (buoni da straordinario)
-  let extTot=0, extLines=[];
-  Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]; Object.keys(e).forEach(eid=>{ const x=e[eid]; const b=x.motivo==='Straordinario'?1:0; extTot+=b; extLines.push(x.q+' '+x.cognome+' '+x.nome+' ('+day+' '+MESI[S.month-1].substr(0,3)+', '+x.motivo+'): '+b); }); });
-  if(extLines.length){ doc.setFont('helvetica','bold'); doc.setFontSize(8.5); doc.setTextColor(16,21,30); doc.text('Personale esterno',16,y); y+=4; doc.setFont('helvetica','normal'); doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text(extLines.join('     '),16,y); y+=6; }
-  const grand=totTurno+extTot;
+  const grand=totTurno;
   doc.setFillColor(252,235,238); doc.rect(14,y,W-28,9,'F'); doc.setDrawColor(154,160,168); doc.setLineWidth(0.3); doc.rect(14,y,W-28,9,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
   doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(grand),W-20,y+6.5,{align:'right'}); y+=14;
