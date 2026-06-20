@@ -430,9 +430,13 @@ function scPresenze(){
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezHtml
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'pres\','+S.curDay+')">'+ICONS.check+' Genera PDF presenze del giorno</button>';
 }
+let _extPick=[];
+function pickExt(i){ const x=_extPick[i]||{}; const set=(id,v)=>{const e=document.getElementById(id); if(e)e.value=v||'';}; set('exQual',x.q); set('exCognome',x.cognome); set('exNome',x.nome); set('exProv',x.prov); }
 function externalModal(day){
   let qo=QUALIFICHE.map(q=>'<option>'+q+'</option>').join('');
-  openModal('<h3>Personale esterno</h3><div class="ms">'+day+' '+MESI[S.month-1]+'</div>'
+  _extPick=esterniRows();
+  let already = _extPick.length ? '<div class="eyebrow" style="margin-bottom:0.35rem">Gi\u00e0 inseriti questo mese \u2014 tocca per ripetere</div><div style="margin-bottom:0.7rem">'+_extPick.map((x,i)=>'<button class="btn btn-out btn-xs" style="margin:0 0.3rem 0.3rem 0" onclick="pickExt('+i+')">'+x.q+' '+x.cognome+' '+x.nome+'</button>').join('')+'</div>' : '';
+  openModal('<h3>Personale esterno</h3><div class="ms">'+day+' '+MESI[S.month-1]+'</div>'+already
     +'<label class="eyebrow">Qualifica</label><select id="exQual">'+qo+'</select>'
     +'<label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="exCognome">'
     +'<label class="eyebrow" style="margin-top:0.5rem">Nome</label><input id="exNome">'
@@ -462,6 +466,15 @@ function esterniRows(){ // raggruppa gli esterni del mese per persona: {q,cognom
   return Object.keys(map).sort((a,b)=>rk(map[a].q)-rk(map[b].q)).map(k=>map[k]);
 }
 function esternoBuoni(days){ let t=0; Object.keys(days).forEach(d=>{ if(days[d]==='Straordinario') t++; }); return t; }
+function subsMonth(pid){ const c=S.cells[pid]||{}; let sd=0,sn=0; Object.keys(c).forEach(d=>{ if(c[d]==='SD')sd++; else if(c[d]==='SN')sn++; }); return {sd,sn}; }
+function ensureYearSubs(){ // conteggio SD/SN dell'intero anno (lettura una-tantum di tutti i mesi)
+  const key=S.turno+'/'+S.year; if(S._subsKey===key) return; S._subsKey=key; S.subsYear=null; if(!db) return;
+  db.ref('turni/'+S.turno+'/anno/'+S.year+'/mesi').once('value').then(function(snap){ const v=snap.val()||{}, acc={};
+    Object.keys(v).forEach(function(mk){ const celle=(v[mk]&&v[mk].celle)||{}; Object.keys(celle).forEach(function(pid){ const days=celle[pid]||{}; Object.keys(days).forEach(function(d){ const code=days[d]; if(code==='SD'||code==='SN'){ acc[pid]=acc[pid]||{sd:0,sn:0}; if(code==='SD')acc[pid].sd++; else acc[pid].sn++; } }); }); });
+    S.subsYear=acc; if(S.tab===3) render();
+  }).catch(function(){ S.subsYear={}; if(S.tab===3) render(); });
+}
+function refreshYearSubs(){ S._subsKey=null; ensureYearSubs(); }
 function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
   const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0;
   wd.forEach(c=>{ if(effPos(p)===c.salto) return; const code=cellCode(p.id,c.day); if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
@@ -475,12 +488,19 @@ function scBuoni(){
   esterniRows().forEach(x=>{ const b=esternoBuoni(x.days); extTot+=b; const dl=Object.keys(x.days).sort((a,b)=>a-b).map(d=>d+(x.days[d]==='Straordinario'?'\u00b7str':'\u00b7sos')).join(', ');
     extRows+='<div class="row ext"><div><div class="rn">'+x.q+' \u00b7 '+x.cognome+' '+x.nome+'</div><div class="rs">'+(x.prov||'esterno')+' \u00b7 giorni '+dl+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; });
   tot+=extTot;
+  ensureYearSubs();
+  let subRows=people.map(p=>{ const m=subsMonth(p.id); const y=(S.subsYear&&S.subsYear[p.id])||{sd:0,sn:0};
+    const ystr = S.subsYear ? (y.sd+' SD \u00b7 '+y.sn+' SN') : 'calcolo\u2026';
+    return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">Mese: <b>'+m.sd+'</b> SD \u00b7 <b>'+m.sn+'</b> SN</div></div><div style="text-align:right"><div class="rs" style="font-weight:600;color:#1F5C99">Anno '+S.year+'</div><div class="rs">'+ystr+'</div></div></div>'; }).join('');
   return periodControls()
-    +'<div class="sec-h"><span class="eyebrow">Personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
-    +(extRows?'<div class="sec-h"><span class="eyebrow">Personale esterno</span></div>'+extRows:'')
+    +'<div class="sec-h"><span class="eyebrow">Buoni pasto \u2014 personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
+    +(extRows?'<div class="sec-h"><span class="eyebrow">Buoni pasto \u2014 personale esterno</span></div>'+extRows:'')
     +'<div class="row" style="border-left:3px solid #C8102E;background:#FCEBEE"><div class="rn cond" style="font-size:1.05rem">TOTALE TURNO '+S.turno+'</div><div class="cond" style="font-weight:700;font-size:1.6rem;color:#C8102E">'+tot+'</div></div>'
     +'<div class="note">Presente = 1 \u00b7 sost. diurna = 2 \u00b7 sost. notturna = 1 \u00b7 esterno in straordinario = 1 \u00b7 esterno in sostituzione = 0.</div>'
-    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'buoni\')">'+ICONS.ticket+' Genera PDF buoni pasto</button>';
+    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'buoni\')">'+ICONS.ticket+' Genera PDF buoni pasto</button>'
+    +'<div class="sec-h"><span class="eyebrow">Contabilit\u00e0 sostituzioni del personale</span></div>'
+    +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell\u2019anno.</div>'+subRows
+    +'<button class="btn btn-out btn-full btn-xs" style="margin-top:0.3rem" onclick="refreshYearSubs()">Aggiorna totali anno</button>';
 }
 
 function scSetup(){
