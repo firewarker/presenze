@@ -1,0 +1,17 @@
+{
+  "name": "Presenze VVF Lentini",
+  "short_name": "Presenze VVF",
+  "description": "Prospetto mensile, presenze, ferie e buoni pasto - Distaccamento di Lentini",
+  "lang": "it",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0D1420",
+  "theme_color": "#15243A",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

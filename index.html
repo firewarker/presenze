@@ -5,6 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#15243A">
 <title>Presenze VVF Lentini</title>
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Presenze VVF">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@400;500;600;700&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet">
@@ -14,7 +21,8 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
 <style>
-  :root{--ink:#10151E;--ink2:#5B636E;--line:#E4E7E2;--paper:#FFFFFF;--paper2:#F7F8F5;--night:#15243A;--night2:#1D3050;--steel:#1F5C99;--amber:#E0A314;--fire:#C8102E;--green:#2C8B4B;--onDark:#EAF0F7;--onDark2:#92A3B7;}
+  :root{--ink:#10151E;--ink2:#5B636E;--line:#E4E7E2;--paper:#FFFFFF;--paper2:#F7F8F5;--night:#15243A;--night2:#1D3050;--steel:#1F5C99;--amber:#E0A314;--fire:#C8102E;--green:#2C8B4B;--onDark:#EAF0F7;--onDark2:#92A3B7;
+        --gline:#DCDFD8;--gvline:#EFF0EC;--alt:#FAFBF8;--rbg:#EDEFEA;--rbd:#C2C6BD;--rtx:#737A70;--dotc:#D2D5CE;}
   *{margin:0;padding:0;box-sizing:border-box;}
   body{font-family:'Barlow',system-ui,Arial,sans-serif;background:#0D1420;color:var(--ink);min-height:100vh;-webkit-font-smoothing:antialiased;}
   .cond{font-family:'Barlow Semi Condensed','Barlow',sans-serif;}
@@ -42,16 +50,17 @@
   .h-right{margin-left:auto;display:flex;align-items:center;gap:0.7rem;}
   .h-status{display:flex;align-items:center;gap:0.4rem;font-size:0.68rem;color:var(--onDark2);}
   .dot{width:7px;height:7px;border-radius:50%;background:#3FB466;}
-  .dot.off{background:#E0A314;}
+  .dot.wait{background:#E0A314;} .dot.err{background:#E5484D;}
   .logout{background:none;border:1px solid #34466A;color:var(--onDark2);border-radius:6px;font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.05em;font-size:0.64rem;font-weight:600;padding:0.3rem 0.55rem;cursor:pointer;}
   .logout:hover{color:#fff;border-color:#fff;}
   .firestripe{height:3px;background:var(--fire);margin-top:0.85rem;border-radius:2px;}
   .nav{background:var(--night2);display:flex;}
-  .nav button{flex:1;background:none;border:none;border-bottom:3px solid transparent;padding:0.6rem 0.3rem 0.5rem;color:var(--onDark2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.25rem;transition:0.12s;}
+  .nav button{flex:1;min-width:0;background:none;border:none;border-bottom:3px solid transparent;padding:0.6rem 0.25rem 0.5rem;color:var(--onDark2);cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:0.3rem;transition:0.12s;}
   .nav button:hover{color:#C7D5E6;}
   .nav button.active{color:#fff;border-bottom-color:var(--amber);}
-  .nav svg{width:21px;height:21px;}
-  .nav .nl{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.06em;font-size:0.64rem;font-weight:600;}
+  .nav svg{width:21px;height:21px;flex:0 0 auto;}
+  .nav .nl{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.06em;font-size:0.64rem;font-weight:600;line-height:1.15;text-align:center;}
+  .offline{background:#4A1E28;color:#FFD9DF;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.78rem;margin-bottom:0.9rem;line-height:1.4;}
   .content{background:var(--paper);border-radius:0 0 12px 12px;padding:1.15rem 1.1rem 1.3rem;min-height:60vh;}
   .ctl-row{display:flex;gap:0.55rem;margin-bottom:1.1rem;flex-wrap:wrap;}
   .field{flex:1;min-width:130px;border:1px solid var(--line);border-radius:8px;padding:0.4rem 0.65rem;background:var(--paper);}
@@ -62,7 +71,7 @@
   .sec-h:first-child{margin-top:0;}
   .grid-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
   table.grid{border-collapse:collapse;min-width:max-content;width:100%;}
-  .grid th,.grid td{border-bottom:1px solid #DCDFD8;padding:0;}
+  .grid th,.grid td{border-bottom:1px solid var(--gline);padding:0;}
   .grid thead th{background:var(--paper2);border-bottom:2px solid var(--line);padding:0.45rem 0.35rem;vertical-align:top;}
   .grid th.name,.grid td.name{position:sticky;left:0;background:var(--paper);text-align:left;min-width:140px;z-index:2;border-right:1px solid var(--line);padding:0.6rem 0.55rem;}
   .grid thead th.name{background:var(--paper2);z-index:3;}
@@ -72,36 +81,36 @@
   .gn-g{background:var(--amber);} .gn-n{background:var(--steel);}
   .pname{font-weight:600;font-size:0.9rem;line-height:1.05;}
   .pq{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.05em;font-size:0.58rem;font-weight:600;color:#fff;background:#9098A3;border-radius:3px;padding:0.03rem 0.28rem;margin-bottom:0.15rem;display:inline-block;}
-  td.daycell{padding:0.48rem 0.24rem;text-align:center;border-left:1px solid #EFF0EC;}
-  .cell{width:34px;height:30px;border:none;background:none;cursor:pointer;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.74rem;display:flex;align-items:center;justify-content:center;margin:0 auto;}
+  td.daycell{padding:0.48rem 0.24rem;text-align:center;border-left:1px solid var(--gvline);}
+  .cell{width:34px;height:30px;border:none;background:none;cursor:pointer;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.74rem;display:flex;align-items:center;justify-content:center;margin:0 auto;color:var(--ink);}
   .chipc{width:30px;height:23px;border-radius:5px;display:flex;align-items:center;justify-content:center;}
-  .empty{color:#D2D5CE;} .empty:hover{background:#F4F5F1;border-radius:5px;}
-  .rcell{background:#EDEFEA;border:1px dashed #C2C6BD;color:#737A70;border-radius:5px;width:30px;height:23px;}
-  .grid tbody tr:nth-child(even) td{background:#FAFBF8;}
-  .grid tbody tr:nth-child(even) td.name{background:#FAFBF8;}
+  .empty{color:var(--dotc);} .empty:hover{background:var(--paper2);border-radius:5px;}
+  .rcell{background:var(--rbg);border:1px dashed var(--rbd);color:var(--rtx);border-radius:5px;width:30px;height:23px;display:flex;align-items:center;justify-content:center;}
+  .grid tbody tr:nth-child(even) td{background:var(--alt);}
+  .grid tbody tr:nth-child(even) td.name{background:var(--alt);}
   .daycell .chipc,.daycell .rcell{width:32px;height:26px;}
   .legend{display:flex;gap:0.5rem 0.85rem;flex-wrap:wrap;margin-top:0.7rem;font-size:0.68rem;color:var(--ink2);}
   .legend b{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:0.25rem;}
   .cap{font-size:0.66rem;color:#9AA0A8;text-align:center;margin-top:0.5rem;}
   .btn{font-family:'Barlow Semi Condensed';font-weight:600;letter-spacing:0.03em;border:none;border-radius:8px;padding:0.7rem 1rem;font-size:0.92rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;text-transform:uppercase;}
   .btn-full{width:100%;} .btn-fire{background:var(--fire);color:#fff;} .btn-fire:hover{background:#A50D26;}
-  .btn-out{background:#fff;color:var(--ink);border:1px solid var(--line);} .btn-out:hover{background:var(--paper2);}
+  .btn-amber{background:var(--amber);color:#3d2d00;}
+  .btn-out{background:var(--paper);color:var(--ink);border:1px solid var(--line);} .btn-out:hover{background:var(--paper2);}
   .btn-xs{padding:0.32rem 0.6rem;font-size:0.72rem;border-radius:6px;}
   .mt{margin-top:1.05rem;}
   .row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;border:1px solid var(--line);border-left:3px solid #C9CEC6;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.45rem;background:var(--paper);}
   .row.ok{border-left-color:var(--green);} .row.ko{border-left-color:var(--fire);} .row.rec{border-left-color:#B6BBB2;opacity:0.78;} .row.ext{border-left-color:var(--amber);}
   .rn{font-weight:600;font-size:0.9rem;} .rs{font-size:0.7rem;color:var(--ink2);margin-top:0.12rem;}
-  .tag{font-family:'Barlow Semi Condensed';font-weight:600;text-transform:uppercase;letter-spacing:0.03em;padding:0.2rem 0.55rem;border-radius:5px;font-size:0.68rem;}
+  .tag{font-family:'Barlow Semi Condensed';font-weight:600;text-transform:uppercase;letter-spacing:0.03em;padding:0.2rem 0.55rem;border-radius:5px;font-size:0.68rem;white-space:nowrap;}
   .stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.3rem 0 1.05rem;}
   .stat{border:1px solid var(--line);border-radius:8px;padding:0.55rem;text-align:center;background:var(--paper2);}
   .stat .v{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.5rem;line-height:1;}
   .stat .l{font-size:0.62rem;color:var(--ink2);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.2rem;}
-  .note{background:#EAF1F8;border:1px solid #CFE0F0;border-left:3px solid var(--steel);border-radius:8px;padding:0.6rem 0.8rem;font-size:0.76rem;color:#244A73;margin-top:1.05rem;}
+  .note{background:#EAF1F8;border:1px solid #CFE0F0;border-left:3px solid var(--steel);border-radius:8px;padding:0.6rem 0.8rem;font-size:0.76rem;color:#244A73;margin-top:1.05rem;line-height:1.4;}
+  .warn{background:#FFF4DB;border:1px solid #F0D79A;border-left:3px solid var(--amber);border-radius:8px;padding:0.6rem 0.8rem;font-size:0.78rem;color:#6B4A00;margin-bottom:0.9rem;line-height:1.4;}
   .veh{display:flex;justify-content:space-between;align-items:center;padding:0.5rem 0.75rem;border:1px solid var(--line);border-radius:8px;margin-bottom:0.4rem;font-size:0.82rem;}
-  .shift-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;}
-  .shift-opt{border:1px solid var(--line);border-radius:8px;text-align:center;padding:0.75rem 0;font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.3rem;cursor:pointer;background:var(--paper);}
-  .shift-opt.sel{border-color:var(--fire);background:#FCEBEE;color:var(--fire);}
   .scard{border:1px solid var(--line);border-radius:10px;padding:0.7rem 0.8rem;margin-bottom:0.55rem;background:var(--paper);}
+  .scard.off{opacity:0.7;border-style:dashed;}
   .scard-top{display:flex;align-items:center;gap:0.5rem;}
   .ferflds{display:flex;gap:0.5rem;margin-top:0.55rem;flex-wrap:wrap;}
   .ferf{flex:1;min-width:90px;border:1px solid var(--line);border-radius:7px;padding:0.35rem 0.5rem;background:var(--paper2);}
@@ -111,17 +120,26 @@
   .btn svg{width:18px;height:18px;flex:0 0 auto;}
   .code-row{display:flex;align-items:center;gap:0.6rem;border:1px solid var(--line);border-radius:7px;padding:0.45rem 0.65rem;margin-bottom:0.35rem;font-size:0.82rem;}
   .modal-bg{position:fixed;inset:0;background:rgba(8,12,20,0.62);display:flex;align-items:center;justify-content:center;padding:1rem;z-index:50;}
-  .modal{background:#fff;border-radius:14px;padding:1.1rem;width:100%;max-width:360px;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,0.35);}
+  .modal{background:var(--paper);color:var(--ink);border-radius:14px;padding:1.1rem;width:100%;max-width:380px;max-height:88vh;overflow:auto;box-shadow:0 18px 50px rgba(0,0,0,0.35);}
   .modal h3{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.2rem;}
+  .modal h4{font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.95rem;margin:0.9rem 0 0.3rem;}
   .modal .ms{font-size:0.74rem;color:var(--ink2);margin:0.15rem 0 0.85rem;}
   .modal label{display:block;}
-  .modal input,.modal select{width:100%;padding:0.5rem 0.6rem;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:0.92rem;background:#fff;margin-top:0.2rem;}
+  .modal input,.modal select{width:100%;padding:0.5rem 0.6rem;border:1px solid var(--line);border-radius:7px;font-family:inherit;font-size:0.92rem;background:var(--paper);color:var(--ink);margin-top:0.2rem;}
+  .modal input[type=radio]{width:auto;margin:0 0.4rem 0 0;}
+  .modal .radio{display:flex;align-items:flex-start;gap:0.2rem;font-size:0.82rem;margin-top:0.35rem;cursor:pointer;}
+  .modal .hint{font-size:0.7rem;color:var(--ink2);margin-top:0.2rem;}
   .codegrid{display:grid;grid-template-columns:repeat(3,1fr);gap:0.45rem;}
-  .codebtn{border:1px solid var(--line);border-radius:8px;padding:0.5rem 0.2rem;cursor:pointer;text-align:center;background:#fff;font-size:0.72rem;}
+  .codebtn{border:1px solid var(--line);border-radius:8px;padding:0.5rem 0.2rem;cursor:pointer;text-align:center;background:var(--paper);color:var(--ink);font-size:0.72rem;}
   .codebtn:hover{border-color:var(--fire);}
   .codebtn .cc{font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.95rem;display:block;}
   .spin{text-align:center;color:var(--ink2);padding:2rem;font-size:0.85rem;}
-  @media (max-width:560px){.nav .nl{display:none;}.nav svg{width:24px;height:24px;}.h-title{font-size:1.3rem;}.stats3 .v{font-size:1.25rem;}}
+  @media (max-width:560px){
+    .nav button{padding:0.5rem 0.1rem 0.45rem;gap:0.25rem;}
+    .nav .nl{font-size:0.5rem;letter-spacing:0.02em;}
+    .nav svg{width:20px;height:20px;}
+    .h-title{font-size:1.3rem;} .stats3 .v{font-size:1.25rem;}
+  }
 </style>
 </head>
 <body>
@@ -149,7 +167,7 @@
       <div class="brand"><div class="badge-vvf2">VV<br>F</div>
         <div><div class="h-title">PRESENZE</div><div class="h-sub" id="hSub">&nbsp;</div></div></div>
       <div class="h-right">
-        <div class="h-status"><span class="dot" id="syncDot"></span> <span id="syncTxt">Firebase</span></div>
+        <div class="h-status"><span class="dot wait" id="syncDot"></span> <span id="syncTxt">Connessione&hellip;</span></div>
         <button class="logout" onclick="doLogout()">Esci</button>
       </div>
     </div>
@@ -163,8 +181,8 @@
 
 <script>
 /* ======================= CONFIG ======================= */
-// Configurazione del progetto Firebase "presenze-7ba78" (gia' inserita). La apiKey Web non e' segreta.
-// La sicurezza reale e' data dalle regole del database + dai domini autorizzati in Authentication.
+// Configurazione del progetto Firebase "presenze-7ba78". La apiKey Web non e' segreta:
+// la sicurezza reale e' data dalle regole del database.
 const firebaseConfig = {
   apiKey: "AIzaSyAZ94trW8zfyjjH7vx03F09_u8bvqhtmS4",
   authDomain: "presenze-7ba78.firebaseapp.com",
@@ -176,7 +194,10 @@ const firebaseConfig = {
 };
 const ADMIN_EMAIL  = "admin@vvflentini.it";   // account amministratore (vede tutti i turni)
 const EMAIL_DOMAIN = "vvflentini.it";          // convenzione: turnoa@, turnob@, turnoc@, turnod@ + dominio
-const SEDE = "Lentini (2002)";
+const SEDE  = "Lentini (2002)";
+const LUOGO = "Lentini";                       // luogo stampato accanto alla data nei PDF
+const ANNO_INIZIO = 2024;                      // primo anno selezionabile
+const LEGACY_FERIE_YEAR = 2026;                // anno a cui appartengono le ferie inserite con la versione precedente
 
 /* ======================= COSTANTI ======================= */
 const QUALIFICHE=['CR','CSE','CS','VPC','VPE','VP','VV'];
@@ -187,10 +208,11 @@ const DEFAULT_CODICI={
   MI:['Missione','#E4E9F7','#33408F'], RO:['Recupero ore','#EDEFEA','#6B7280'], PF:['Permesso famiglia','#FBE6F0','#9D2B6B'],
   CP:['Congedo parentale','#ECF5DA','#4C6B1C'], P:['Presente','#E3F1E4','#1E6B39']
 };
+const ABSENCE=['L','M','MB','MI','DS','PF','CP','RO'];      // codici predefiniti che sono assenze
+const RESERVED=['R','RS','ST','SO','EXT','P','SD','SN'];      // sigle riservate dall'app
 const WDS=['dom','lun','mar','mer','gio','ven','sab'];
-const WDL=['domenica','luned\u00ec','marted\u00ec','mercoled\u00ec','gioved\u00ec','venerd\u00ec','sabato'];
+const WDL=['domenica','lunedì','martedì','mercoledì','giovedì','venerdì','sabato'];
 const MESI=['gennaio','febbraio','marzo','aprile','maggio','giugno','luglio','agosto','settembre','ottobre','novembre','dicembre'];
-const ABSENCE=['L','M','MB','MI','DS','PF','CP','RO'];
 const ICONS={
  grid:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="9" y1="3" x2="9" y2="21"/><line x1="15" y1="3" x2="15" y2="21"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="3" y1="15" x2="21" y2="15"/></svg>',
  check:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>',
@@ -202,12 +224,11 @@ const ICONS={
 };
 
 /* ======================= MOTORE TURNI ======================= */
-// Validato sul turnario reale (foglio Calendario). ref = 1 gennaio 2026.
+// Validato sul turnario reale (foglio Calendario, 478 date su 478). ref = 1 gennaio 2026. Vale per qualunque anno.
 function dayN(y,m,d){ return Math.round((Date.UTC(y,m-1,d)-Date.UTC(2026,0,1))/86400000); }
 function diurnoTurno(n){ return ['B','C','D','A'][((n%4)+4)%4]; }
 function diuSalto(n){ return ((Math.floor((n+1)/4)+5)%8+8)%8+1; }
 function notSalto(n){ return ((Math.floor(n/4)+5)%8+8)%8+1; }
-// per il turno T in un giorno -> {tipo:'G'|'N'|null, salto:1..8}
 function dutyFor(T,y,m,d){
   const n=dayN(y,m,d);
   if(diurnoTurno(n)===T) return {tipo:'G',salto:diuSalto(n)};
@@ -219,31 +240,112 @@ function workingDays(T,y,m){
   for(let d=1; d<=last; d++){ const du=dutyFor(T,y,m,d); if(du.tipo){ out.push({day:d, wd:new Date(y,m-1,d).getDay(), tipo:du.tipo, salto:du.salto}); } }
   return out;
 }
-// Il turno PROVA (sandbox solo-admin) usa il turnario reale del turno D ma scrive su dati isolati (/turni/PROVA).
+// Il turno PROVA (sandbox solo-admin) usa il turnario del turno D ma scrive su dati isolati (/turni/PROVA).
 function engTurno(){ return S.turno==='PROVA' ? 'D' : S.turno; }
 
 /* ======================= STATO ======================= */
 let auth, db, scopeRefs=[];
 const S={ turno:null, isAdmin:false, email:'', year:(new Date().getFullYear()), month:(new Date().getMonth()+1), tab:0,
-          personale:{}, codici:{}, cells:{}, note:{}, esterni:{}, mezzi:{}, saltoOv:{} };
+          personale:{}, codici:{}, cells:{}, note:{}, esterni:{}, mezzi:{}, saltoOv:{}, mezziOp:{},
+          yc:{}, conn:'wait', pending:0 };
 
-function codeColor(c){ const cc=S.codici[c]||DEFAULT_CODICI[c]; return cc?[cc[1],cc[2]]:['#EDEFEA','#6B7280']; }
-function codeLabel(c){ const cc=S.codici[c]||DEFAULT_CODICI[c]; return cc?cc[0]:c; }
+/* ======================= UTILITA' ======================= */
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function mk(y,m){ return 'm'+y+String(m).padStart(2,'0'); }           // chiave mese, es. m202611
+function curMk(){ return mk(S.year,S.month); }
+function mkLabel(k){ const y=+k.substr(1,4), m=+k.substr(5,2); return MESI[m-1]+' '+y; }
+function prevMk(){ return S.month===1 ? mk(S.year-1,12) : mk(S.year,S.month-1); }
+function cap1(s){ return s.charAt(0).toUpperCase()+s.slice(1); }
+function val(id){ const e=document.getElementById(id); return e?e.value:''; }
+function rk(q){ return (RANK[q]!==undefined)?RANK[q]:99; }
+function nomeBreve(p){ return (p.cognome||'')+' '+(p.nome||'').charAt(0)+(p.nome?'.':''); }
+
+/* Codici: predefiniti + personalizzati (tipo 'A' assenza / 'P' presenza) */
+function codeDef(c){ return S.codici[c]||DEFAULT_CODICI[c]; }
+function codeColor(c){ const cc=codeDef(c); return cc?[cc[1],cc[2]]:['#EDEFEA','#6B7280']; }
+function codeLabel(c){ const cc=codeDef(c); return cc?cc[0]:c; }
 function allCodici(){ const o=Object.assign({},DEFAULT_CODICI,S.codici); delete o.P; return o; }
-function personArr(){ return Object.keys(S.personale).map(id=>Object.assign({id},S.personale[id])).sort((a,b)=>(RANK[a.q]-RANK[b.q])||((a.pos||99)-(b.pos||99))||(''+a.cognome).localeCompare(b.cognome)); }
+function isAbsent(code){
+  if(!code || code==='P' || code==='RS' || code==='SD' || code==='SN') return false;
+  if(DEFAULT_CODICI[code]) return ABSENCE.indexOf(code)>=0;
+  const c=S.codici[code]; if(c) return c[3]!=='P';
+  return true; // codice sconosciuto (es. eliminato): trattato come assenza
+}
+
+/* Persone: qualifica e posizione valgono "dal mese X" (storico), attive da 'dal' ad 'al' */
+function resolveAt(raw,key){
+  let q=raw.q||'VP', pos=+raw.pos||0;
+  const h=raw.hist||{};
+  Object.keys(h).filter(k=>k<=key).sort().forEach(k=>{ const e=h[k]||{}; if(e.q!=null&&e.q!=='') q=e.q; if(e.pos!=null&&e.pos!=='') pos=+e.pos; });
+  return {q,pos};
+}
+function isActive(raw,key){ if(raw.dal && key<raw.dal) return false; if(raw.al && key>raw.al) return false; return true; }
+function sortPeople(a,b){ return (rk(a.q)-rk(b.q))||((a.pos||99)-(b.pos||99))||(''+a.cognome).localeCompare(''+b.cognome); }
+function personAt(id,key){ const r=S.personale[id]||{}; const at=resolveAt(r,key); return Object.assign({},r,{id,q:at.q,pos:at.pos}); }
+function personArr(){ const key=curMk(); return Object.keys(S.personale).filter(id=>isActive(S.personale[id],key)).map(id=>personAt(id,key)).sort(sortPeople); }
+function inactiveArr(){ const key=curMk(); return Object.keys(S.personale).filter(id=>!isActive(S.personale[id],key)).map(id=>personAt(id,key)).sort(sortPeople); }
 function effPos(p){ const ov=S.saltoOv[p.id]; return (ov!=null&&ov!=='')?+ov:(p.pos||0); }
 function cellCode(pid,day){ return (S.cells[pid]&&S.cells[pid][day])||''; }
+
+/* Dati dell'anno intero (ferie godute, sostituzioni): letti una volta, il mese aperto e' sempre quello live */
+function loadYear(Y){
+  const k=S.turno+'/'+Y; if(S.yc[k]!==undefined) return;
+  S.yc[k]=null; // in caricamento
+  db.ref('turni/'+S.turno+'/anno/'+Y+'/mesi').once('value')
+    .then(s=>{ S.yc[k]=s.val()||{}; render(); })
+    .catch(()=>{ S.yc[k]={}; render(); });
+}
+function monthCells(Y,m){
+  if(Y===S.year && m===S.month) return S.cells;
+  const yc=S.yc[S.turno+'/'+Y]; if(!yc) return null;
+  const mm=yc[m]||yc[String(m)]; return (mm&&mm.celle)||{};
+}
+function countInYear(pid,Y,codes){ // ritorna {codice:conteggio} oppure null se l'anno non e' ancora caricato
+  const k=S.turno+'/'+Y;
+  if(S.yc[k]===undefined) loadYear(Y);
+  if(!S.yc[k]) return null; // anno ancora in caricamento
+  const out={}; codes.forEach(c=>out[c]=0);
+  for(let m=1;m<=12;m++){ const celle=monthCells(Y,m); if(celle==null) return null; const c=celle[pid]||{};
+    Object.keys(c).forEach(d=>{ const v=c[d]; if(out[v]!==undefined) out[v]++; }); }
+  return out;
+}
+
+/* Ferie per anno: ferie/yAAAA = {spett, res}; spettanti ereditate dall'anno prima se vuote; residuo automatico se vuoto */
+function ferieCfg(p,Y){
+  const f=p.ferie||{}; let e=f['y'+Y];
+  if(!e && Y===LEGACY_FERIE_YEAR && (p.fSpett!=null || p.fRes!=null)) e={spett:p.fSpett||0,res:p.fRes||0};
+  return e||null;
+}
+function firstFerieYear(p){
+  let ys=Object.keys(p.ferie||{}).map(k=>+k.substr(1)).filter(y=>!isNaN(y));
+  if(p.fSpett!=null||p.fRes!=null) ys.push(LEGACY_FERIE_YEAR);
+  return ys.length?Math.min.apply(null,ys):null;
+}
+function spettanti(p,Y){
+  const fy=firstFerieYear(p); if(fy==null) return 0;
+  for(let y=Y;y>=fy;y--){ const e=ferieCfg(p,y); if(e && e.spett!=null && e.spett!=='') return +e.spett; }
+  return 0;
+}
+function residuo(p,Y){ // residuo anno precedente disponibile nell'anno Y (null = in calcolo)
+  const e=ferieCfg(p,Y); if(e && e.res!=null && e.res!=='') return +e.res;
+  const fy=firstFerieYear(p); if(fy==null || Y<=fy) return 0;
+  const g=countInYear(p.id,Y-1,['L']); if(g==null) return null;
+  const rp=residuo(p,Y-1); if(rp==null) return null;
+  return spettanti(p,Y-1)+rp-g.L;
+}
 
 /* ======================= FIREBASE ======================= */
 function startApp(){
   if(String(firebaseConfig.apiKey).indexOf('INCOLLA')===0){
     document.getElementById('cfgWarn').classList.remove('hide');
-    document.getElementById('cfgWarn').innerHTML='Manca la <b>apiKey</b> di Firebase. Apri index.html, cerca <b>INCOLLA_QUI_LA_API_KEY</b> e incolla la chiave dalla Console Firebase (Impostazioni progetto &rarr; Le tue app &rarr; SDK setup).';
+    document.getElementById('cfgWarn').innerHTML='Manca la <b>apiKey</b> di Firebase nel file index.html.';
     return;
   }
   firebase.initializeApp(firebaseConfig);
   auth=firebase.auth(); db=firebase.database();
+  db.ref('.info/connected').on('value',s=>{ S.conn = s.val()===true ? 'on' : (S.conn==='wait'?'wait':'off'); updSync(); if(document.getElementById('app').offsetParent) render(); });
   auth.onAuthStateChanged(onAuth);
+  window.addEventListener('beforeunload',function(e){ if(S.pending>0){ e.preventDefault(); e.returnValue=''; return ''; } });
 }
 function onAuth(user){
   if(!user){ document.getElementById('app').classList.add('hide'); document.getElementById('login').classList.remove('hide'); detach(); return; }
@@ -253,7 +355,7 @@ function onAuth(user){
   else { const m=S.email.match(/^turno([abcd])@/); S.turno=m?m[1].toUpperCase():null; }
   document.getElementById('login').classList.add('hide');
   document.getElementById('app').classList.remove('hide');
-  if(!S.turno){ document.getElementById('content').innerHTML='<div class="note">Questo utente non e\' associato a nessun turno. Usa un indirizzo del tipo <b>turnod@'+EMAIL_DOMAIN+'</b> oppure l\'account amministratore.</div>'; return; }
+  if(!S.turno){ document.getElementById('content').innerHTML='<div class="note">Questo utente non è associato a nessun turno. Usa un indirizzo del tipo <b>turnod@'+EMAIL_DOMAIN+'</b> oppure l\'account amministratore.</div>'; return; }
   attach();
 }
 function doLogin(){
@@ -262,10 +364,13 @@ function doLogin(){
   if(!auth){ document.getElementById('liErr').textContent='Configurazione Firebase mancante.'; return; }
   auth.signInWithEmailAndPassword(e,p).catch(err=>{ document.getElementById('liErr').textContent='Accesso non riuscito: '+(err.code||err.message); });
 }
-function doLogout(){ if(auth) auth.signOut(); }
+function doLogout(){
+  if(S.pending>0 && !confirm('Ci sono modifiche non ancora salvate sul server. Uscire comunque?')) return;
+  if(auth) auth.signOut();
+}
 function changePasswordModal(){
   if(!auth||!auth.currentUser) return;
-  openModal('<h3>Cambia password</h3><div class="ms">'+auth.currentUser.email+'</div>'
+  openModal('<h3>Cambia password</h3><div class="ms">'+esc(auth.currentUser.email)+'</div>'
     +'<label class="eyebrow">Password attuale</label><input id="cpOld" type="password" autocomplete="current-password">'
     +'<label class="eyebrow" style="margin-top:0.5rem">Nuova password</label><input id="cpNew" type="password" autocomplete="new-password">'
     +'<label class="eyebrow" style="margin-top:0.5rem">Conferma nuova password</label><input id="cpNew2" type="password" autocomplete="new-password">'
@@ -285,10 +390,10 @@ function doChangePassword(){
 function detach(){ scopeRefs.forEach(r=>r.off()); scopeRefs=[]; }
 function attach(){
   detach();
-  const base='turni/'+S.turno;
-  const yk=S.year, mk=S.month, mbase=base+'/anno/'+yk+'/mesi/'+mk;
-  setSync(true);
-  const bind=(path,key,cb)=>{ const r=db.ref(path); r.on('value',s=>{ S[key]=s.val()||{}; (cb||render)(); }, ()=>setSync(false)); scopeRefs.push(r); };
+  // svuota subito i dati del periodo precedente: mai mostrare per un attimo il mese/turno sbagliato
+  S.personale={}; S.codici={}; S.mezzi={}; S.cells={}; S.note={}; S.esterni={}; S.saltoOv={}; S.mezziOp={}; S.yc={};
+  const base='turni/'+S.turno, mbase=base+'/anno/'+S.year+'/mesi/'+S.month;
+  const bind=(path,key)=>{ const r=db.ref(path); r.on('value',s=>{ S[key]=s.val()||{}; render(); }, e=>{ console.error(path,e); }); scopeRefs.push(r); };
   bind(base+'/personale','personale');
   bind(base+'/codici','codici');
   bind(base+'/mezzi','mezzi');
@@ -296,119 +401,161 @@ function attach(){
   bind(mbase+'/note','note');
   bind(mbase+'/esterni','esterni');
   bind(mbase+'/saltoOv','saltoOv');
-  document.getElementById('hSub').textContent='Turno '+S.turno+(S.isAdmin?' (admin)':'')+' \u00b7 '+MESI[S.month-1]+' '+S.year;
+  bind(mbase+'/mezziOp','mezziOp');
+  document.getElementById('hSub').textContent='Turno '+S.turno+(S.isAdmin?' (admin)':'')+' · '+MESI[S.month-1]+' '+S.year;
   render();
 }
-function setSync(ok){ document.getElementById('syncDot').classList.toggle('off',!ok); document.getElementById('syncTxt').textContent=ok?'Firebase':'Offline'; }
+function updSync(){
+  const d=document.getElementById('syncDot'), t=document.getElementById('syncTxt'); if(!d) return;
+  d.className='dot';
+  if(S.conn==='off'){ d.classList.add('err'); t.textContent='Offline'+(S.pending?(' · '+S.pending+' in attesa'):''); }
+  else if(S.conn==='wait'){ d.classList.add('wait'); t.textContent='Connessione…'; }
+  else if(S.pending>0){ d.classList.add('wait'); t.textContent='Salvataggio…'; }
+  else { t.textContent='Online'; }
+}
 function refMese(){ return 'turni/'+S.turno+'/anno/'+S.year+'/mesi/'+S.month; }
+function refTurno(){ return 'turni/'+S.turno; }
 function changePeriod(){ attach(); }
 
-/* ======================= AZIONI DB ======================= */
-function setCell(pid,day,code){ const r=db.ref(refMese()+'/celle/'+pid+'/'+day); code?r.set(code):r.remove(); closeModal(); }
-function setNote(pid,day,val){ const r=db.ref(refMese()+'/note/'+day+'/'+pid); val?r.set(val):r.remove(); }
-function savePerson(id){
-  const o={q:val('edQual'),cognome:val('edCognome'),nome:val('edNome'),pos:+val('edPos')||0,fSpett:+val('edF0')||0,fRes:+val('edF1')||0,cong:+val('edCong')||0};
-  const ref=db.ref('turni/'+S.turno+'/personale'); (id?ref.child(id):ref.push()).update(o); closeModal();
+/* Ogni scrittura passa da qui: conta le modifiche in attesa e mostra gli errori invece di perderle in silenzio */
+function W(op){
+  S.pending++; updSync();
+  Promise.resolve(op).then(function(){},function(e){ alert('Salvataggio NON riuscito: '+((e&&(e.code||e.message))||e)+'\nRiprova o controlla la connessione.'); })
+    .then(function(){ S.pending=Math.max(0,S.pending-1); updSync(); });
 }
-function delPerson(id){ if(confirm('Eliminare questa persona?')){ db.ref('turni/'+S.turno+'/personale/'+id).remove(); closeModal(); } }
-function saveCode(){ const c=val('cdCode').toUpperCase().trim(); if(!c) return; db.ref('turni/'+S.turno+'/codici/'+c).set([val('cdLabel')||c, val('cdBg')||'#EDEFEA', val('cdTx')||'#10151E']); closeModal(); }
-function delCode(c){ db.ref('turni/'+S.turno+'/codici/'+c).remove(); closeModal(); }
-function saveMezzo(id){ const o={nome:val('mzNome')}; const ref=db.ref('turni/'+S.turno+'/mezzi'); (id?ref.child(id):ref.push()).update(o); closeModal(); }
-function delMezzo(id){ db.ref('turni/'+S.turno+'/mezzi/'+id).remove(); closeModal(); }
-function toggleMezzoOp(day,id,op){ db.ref(refMese()+'/mezziOp/'+day+'/'+id).set({op:op}); }
-function saveExternal(day){ const o={q:val('exQual'),cognome:val('exCognome'),nome:val('exNome'),prov:val('exProv'),motivo:val('exMot')}; db.ref(refMese()+'/esterni/'+day).push(o); closeModal(); }
-function delExternal(day,eid){ db.ref(refMese()+'/esterni/'+day+'/'+eid).remove(); }
-function applySalto(pid,scope){
-  if(scope==='mese'){ const np=prompt('Nuova posizione di salto per questo mese (1-8, vuoto = nessuno):',''); db.ref(refMese()+'/saltoOv/'+pid).set(np?+np:null); }
-  else { const np=prompt('Nuova posizione di salto permanente (1-8):',S.personale[pid].pos||''); if(np!==null){ db.ref('turni/'+S.turno+'/personale/'+pid+'/pos').set(+np||0); } }
+
+/* ======================= AZIONI DB ======================= */
+function setCell(pid,day,code){ const r=db.ref(refMese()+'/celle/'+pid+'/'+day); W(code?r.set(code):r.remove()); closeModal(); }
+function setNote(pid,day,v){ const r=db.ref(refMese()+'/note/'+day+'/'+pid); W(v?r.set(v):r.remove()); }
+function toggleMezzoOp(day,id,op){ W(db.ref(refMese()+'/mezziOp/'+day+'/'+id).set({op:op})); }
+function delExternal(day,eid){ if(confirm('Rimuovere questo esterno dal giorno '+day+'?')) W(db.ref(refMese()+'/esterni/'+day+'/'+eid).remove()); }
+function saveExternal(day){
+  const o={q:val('exQual'),cognome:val('exCognome').trim(),nome:val('exNome').trim(),prov:val('exProv').trim(),motivo:val('exMot')};
+  if(!o.cognome){ alert('Inserisci almeno il cognome.'); return; }
+  W(db.ref(refMese()+'/esterni/'+day).push(o)); closeModal();
+}
+function saveMezzo(id){ const n=val('mzNome').trim(); if(!n){ alert('Inserisci la denominazione del mezzo.'); return; } const ref=db.ref(refTurno()+'/mezzi'); W((id?ref.child(id):ref.push()).update({nome:n})); closeModal(); }
+function delMezzo(id){ if(confirm('Eliminare questo mezzo?')) W(db.ref(refTurno()+'/mezzi/'+id).remove()); closeModal(); }
+function saveCode(){
+  const c=val('cdCode').toUpperCase().trim();
+  if(!/^[A-Z0-9]{1,3}$/.test(c)){ alert('Sigla non valida: usa da 1 a 3 lettere o numeri.'); return; }
+  if(DEFAULT_CODICI[c] || RESERVED.indexOf(c)>=0){ alert('La sigla "'+c+'" è già usata dall\'app. Scegline un\'altra.'); return; }
+  W(db.ref(refTurno()+'/codici/'+c).set([val('cdLabel').trim()||c, val('cdBg')||'#EDEFEA', val('cdTx')||'#10151E', val('cdTipo')==='P'?'P':'A']));
   closeModal();
 }
-function val(id){ const e=document.getElementById(id); return e?e.value:''; }
+function delCode(c){ if(confirm('Eliminare il codice '+c+'? Le caselle già segnate con '+c+' resteranno e verranno considerate assenze.')){ W(db.ref(refTurno()+'/codici/'+c).remove()); closeModal(); } }
 
 /* ======================= RENDER ======================= */
-const TABS=[['grid','Prospetto',scProspetto],['check','Presenze',scPresenze],['sun','Ferie',scFerie],['ticket','Buoni',scBuoni],['sliders','Setup',scSetup]];
+const TABS=[['grid','Prospetto<br>mensile',scProspetto],['check','Presenze<br>giornaliere',scPresenze],['sun','Prospetto<br>ferie',scFerie],['ticket','Prospetto<br>buoni pasto',scBuoni],['sliders','Impostazioni',scSetup]];
 function render(){
+  if(!S.turno) return;
   document.getElementById('nav').innerHTML=TABS.map((t,i)=>'<button class="'+(i===S.tab?'active':'')+'" onclick="go('+i+')">'+ICONS[t[0]]+'<span class="nl">'+t[1]+'</span></button>').join('');
-  document.getElementById('content').innerHTML=TABS[S.tab][2]();
+  const off = S.conn==='off' ? '<div class="offline"><b>Sei offline.</b> Le modifiche restano in attesa e verranno inviate appena torna la connessione: <b>non chiudere la pagina</b> finché in alto non torna “Online”.</div>' : '';
+  document.getElementById('content').innerHTML=off+TABS[S.tab][2]();
 }
-function go(i){ S.tab=i; render(); }
+function go(i){ S.tab=i; render(); window.scrollTo(0,0); }
 
 function periodControls(extra){
-  let years=''; const yMax=(new Date().getFullYear())+40; for(let y=2024;y<=yMax;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
-  let months=MESI.map((mm,i)=>'<option value="'+(i+1)+'"'+((i+1)===S.month?' selected':'')+'>'+mm.charAt(0).toUpperCase()+mm.slice(1)+'</option>').join('');
-  let turnoSel='';
+  let years=''; const yMax=(new Date().getFullYear())+40; for(let y=ANNO_INIZIO;y<=yMax;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
+  let months=MESI.map((mm,i)=>'<option value="'+(i+1)+'"'+((i+1)===S.month?' selected':'')+'>'+cap1(mm)+'</option>').join('');
+  let turnoSel;
   if(S.isAdmin){ turnoSel='<div class="field"><label class="eyebrow">Turno</label><select onchange="S.turno=this.value;changePeriod()">'+['A','B','C','D','PROVA'].map(t=>'<option value="'+t+'"'+(t===S.turno?' selected':'')+'>'+(t==='PROVA'?'PROVA (test)':t)+'</option>').join('')+'</select></div>'; }
-  else { turnoSel='<div class="field"><label class="eyebrow">Turno</label><input value="'+S.turno+'" disabled></div>'; }
+  else { turnoSel='<div class="field"><label class="eyebrow">Turno</label><input value="'+esc(S.turno)+'" disabled></div>'; }
   return '<div class="ctl-row">'+turnoSel
     +'<div class="field"><label class="eyebrow">Mese</label><select onchange="S.month=+this.value;changePeriod()">'+months+'</select></div>'
     +'<div class="field"><label class="eyebrow">Anno</label><select onchange="S.year=+this.value;changePeriod()">'+years+'</select></div>'+(extra||'')+'</div>';
 }
+function dupWarning(){
+  const map={}; personArr().forEach(p=>{ const e=effPos(p); if(e>=1&&e<=8) (map[e]=map[e]||[]).push(p.cognome||'?'); });
+  const d=Object.keys(map).filter(k=>map[k].length>1);
+  if(!d.length) return '';
+  return '<div class="warn"><b>Attenzione, posizioni di salto doppie:</b> '+d.map(k=>'posizione '+k+' → '+map[k].map(esc).join(' e ')).join('; ')+'. Queste persone vanno in recupero lo stesso giorno. Correggi la posizione da <b>Impostazioni</b>.</div>';
+}
 
+/* ---------- PROSPETTO MENSILE ---------- */
 function scProspetto(){
   const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
-  if(!people.length) return periodControls()+'<div class="note">Nessuna persona nel turno. Vai in <b>Setup</b> e aggiungi il personale: l\'ordine seguir\u00e0 la qualifica e le posizioni di salto.</div>';
+  if(!people.length) return periodControls()+'<div class="note">Nessuna persona in servizio nel turno in '+MESI[S.month-1]+' '+S.year+'. Vai in <b>Impostazioni</b> e aggiungi il personale.</div>';
   let head='<tr><th class="name"><span class="eyebrow">Personale</span></th>';
   wd.forEach(c=>{ head+='<th><div class="daynum">'+c.day+'</div><div class="dayw">'+WDS[c.wd]+'</div><span class="gn '+(c.tipo==='G'?'gn-g':'gn-n')+'">'+c.tipo+'</span></th>'; });
   head+='</tr>';
   let body='';
   people.forEach(p=>{
-    let row='<tr><td class="name"><span class="pq">'+p.q+'</span><div class="pname">'+(p.cognome||'')+' '+(p.nome||'').charAt(0)+(p.nome?'.':'')+'</div></td>';
+    let row='<tr><td class="name"><span class="pq">'+esc(p.q)+'</span><div class="pname">'+esc(nomeBreve(p))+'</div></td>';
     wd.forEach(c=>{
-      const code=cellCode(p.id,c.day);
-      const isRday=(effPos(p)===c.salto);
+      const code=cellCode(p.id,c.day), isRday=(effPos(p)===c.salto), oc='onclick="cellModal(\''+p.id+'\','+c.day+')"';
       let inner;
-      if(code==='RS') inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="chipc" style="background:#FAF1D6;color:#876200;border:1px solid #E7C879">RS</span></button>';
-      else if(isRday) inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="rcell">R</span></button>';
-      else if(!code) inner='<button class="cell empty" onclick="cellModal(\''+p.id+'\','+c.day+')">\u00b7</button>';
-      else { const col=codeColor(code); inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+code+'</span></button>'; }
+      if(code==='RS') inner='<button class="cell" '+oc+'><span class="chipc" style="background:#FAF1D6;color:#876200;border:1px solid #E7C879">RS</span></button>';
+      else if(isRday) inner='<button class="cell" '+oc+'><span class="rcell">R</span></button>';
+      else if(!code) inner='<button class="cell empty" '+oc+'>·</button>';
+      else { const col=codeColor(code); inner='<button class="cell" '+oc+'><span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+esc(code)+'</span></button>'; }
       row+='<td class="daycell">'+inner+'</td>';
     });
     body+=row+'</tr>';
   });
   let extBody='';
   esterniRows().forEach(x=>{
-    let r='<tr><td class="name" style="background:#FFFBF2"><span class="pq" style="background:#E0A314">EXT</span><div class="pname">'+(x.cognome||'')+' '+(x.nome||'').charAt(0)+(x.nome?'.':'')+'</div><div class="rs" style="font-size:0.56rem;color:#9AA0A8">'+(x.prov||'esterno')+'</div></td>';
-    wd.forEach(c=>{ const mot=x.days[c.day]; let inner='<span class="empty">\u00b7</span>';
-      if(mot){ const col=(mot==='Straordinario')?['#FAF1D6','#876200']:['#EDEFEA','#737A70']; inner='<span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+(mot==='Straordinario'?'ST':'SO')+'</span>'; }
+    let r='<tr><td class="name" style="background:#FFFBF2"><span class="pq" style="background:#E0A314">EXT</span><div class="pname">'+esc(nomeBreve(x))+'</div><div class="rs" style="font-size:0.56rem;color:#9AA0A8">'+esc(x.prov||'esterno')+'</div></td>';
+    wd.forEach(c=>{ const mot=x.days[c.day]; let inner='<span class="empty">·</span>';
+      if(mot){ const col=(mot==='Straordinario')?['#FAF1D6','#876200']:['#EDEFEA','#737A70']; inner='<span class="chipc" style="margin:0 auto;background:'+col[0]+';color:'+col[1]+'">'+(mot==='Straordinario'?'ST':'SO')+'</span>'; }
       r+='<td class="daycell">'+inner+'</td>';
     });
     extBody+=r+'</tr>';
   });
-  return periodControls()
+  return periodControls()+dupWarning()
     +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+extBody+'</tbody></table></div>'
-    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto (auto) \u00b7 RS = rientro straordinario (tocca un R) \u00b7 EXT = esterno (ST/SO, da Presenze)</div>'
+    +'<div class="cap">Vuoto = presente · R = salto (automatico) · RS = rientro in straordinario (tocca un R) · EXT = personale esterno (si aggiunge da Presenze giornaliere)</div>'
     +legendHtml()
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Esporta prospetto / richiesta ferie (PDF)</button>';
 }
-function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="background:'+c[k][1]+'"></b>'+k+' '+c[k][0].toLowerCase()+'</span>'; }); s+='<span><b style="background:#EDEFEA;border:1px dashed #C2C6BD"></b>R recupero (auto)</span><span><b style="background:#FAF1D6;border:1px solid #E7C879"></b>RS rientro straordinario</span></div>'; return s; }
+function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="background:'+c[k][1]+'"></b>'+k+' '+esc(c[k][0].toLowerCase())+'</span>'; }); s+='<span><b style="background:var(--rbg);border:1px dashed var(--rbd)"></b>R recupero (auto)</span><span><b style="background:#FAF1D6;border:1px solid #E7C879"></b>RS rientro straordinario</span></div>'; return s; }
 
 function cellModal(pid,day){
-  const p=Object.assign({id:pid},S.personale[pid]||{});
+  const p=personAt(pid,curMk());
   const du=dutyFor(engTurno(),S.year,S.month,day), cur=cellCode(pid,day);
   const isRday=(effPos(p)===du.salto), isRS=(cur==='RS');
-  const dLabel=(p.cognome||'')+' '+(p.nome||'')+' \u00b7 '+day+' '+MESI[S.month-1]+' \u00b7 '+(du.tipo==='G'?'diurno 08-20':du.tipo==='N'?'notturno 20-08':'riposo');
-  const salto='<div class="salto-row"><span class="eyebrow">Salto turno</span>'
-    +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'mese\')">Solo questo mese</button>'
-    +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'sempre\')">In generale</button></div>';
+  const dLabel=esc((p.cognome||'')+' '+(p.nome||''))+' · '+day+' '+MESI[S.month-1]+' · '+(du.tipo==='G'?'diurno 08-20':du.tipo==='N'?'notturno 20-08':'riposo');
+  const salto='<div class="salto-row"><span class="eyebrow">Salto turno</span><button class="btn btn-out btn-xs" onclick="saltoModal(\''+pid+'\')">Cambia posizione di salto</button></div>';
   if(isRday || isRS){
     const rientroBtn = isRS
       ? '<button class="btn btn-out btn-full" onclick="setCell(\''+pid+'\','+day+',\'\')">Annulla rientro (torna a salto)</button>'
-      : '<button class="btn btn-full" style="background:#E0A314;color:#3d2d00" onclick="setCell(\''+pid+'\','+day+',\'RS\')">Rientro in straordinario</button>';
+      : '<button class="btn btn-amber btn-full" onclick="setCell(\''+pid+'\','+day+',\'RS\')">Rientro in straordinario</button>';
     openModal('<h3>'+(isRS?'Rientro in straordinario':'Salto turno')+'</h3><div class="ms">'+dLabel+'</div>'
-      +'<div class="note" style="margin:0 0 0.8rem">'+(isRS?'Questa persona \u00e8 rientrata in straordinario: risulta <b>presente</b> nel foglio presenze e prende il buono pasto. Puoi annullare qui sotto.':'Giornata di salto turno (calcolata). Puoi registrare un <b>rientro in straordinario</b> oppure spostare il salto.')+'</div>'
+      +'<div class="note" style="margin:0 0 0.8rem">'+(isRS?'Questa persona è rientrata in straordinario: risulta <b>presente</b> nelle presenze giornaliere e prende il buono pasto.':'Giornata di salto turno (calcolata). Puoi registrare un <b>rientro in straordinario</b> oppure cambiare la posizione di salto.')+'</div>'
       +rientroBtn+salto);
   } else {
     const c=allCodici();
-    let grid='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'\')"><span class="cc">\u2014</span>Vuota</button>';
+    let grid='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'\')"><span class="cc">—</span>Vuota</button>';
     grid+='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'P\')"><span class="cc">P</span>Presente</button>';
-    Object.keys(c).forEach(k=>{ const b=(k===cur)?'border-color:#C8102E;background:#FCEBEE;':''; grid+='<button class="codebtn" style="'+b+'" onclick="setCell(\''+pid+'\','+day+',\''+k+'\')"><span class="cc">'+k+'</span>'+c[k][0]+'</button>'; });
+    Object.keys(c).forEach(k=>{ const b=(k===cur)?'border-color:#C8102E;background:#FCEBEE;':''; grid+='<button class="codebtn" style="'+b+'" onclick="setCell(\''+pid+'\','+day+',\''+k+'\')"><span class="cc">'+esc(k)+'</span>'+esc(c[k][0])+'</button>'; });
     openModal('<h3>Imposta codice</h3><div class="ms">'+dLabel+'</div><div class="codegrid">'+grid+'</div>'+salto);
   }
 }
 
-function dayRoster(day){ // per la scheda presenze
+/* Cambio posizione di salto: solo questo mese oppure da questo mese in poi (lo storico resta intatto) */
+function saltoModal(pid){
+  const p=personAt(pid,curMk()), ov=S.saltoOv[pid], hasOv=(ov!=null&&ov!=='');
+  const ml=MESI[S.month-1]+' '+S.year;
+  let opts1='<option value="">Posizione standard ('+(p.pos||'nessuna')+')</option>';
+  for(let i=1;i<=8;i++) opts1+='<option value="'+i+'"'+(hasOv&&+ov===i?' selected':'')+'>Posizione '+i+'</option>';
+  opts1+='<option value="0"'+(hasOv&&+ov===0?' selected':'')+'>Nessun salto in questo mese</option>';
+  let opts2='';
+  for(let i=1;i<=8;i++) opts2+='<option value="'+i+'"'+(p.pos===i?' selected':'')+'>Posizione '+i+'</option>';
+  opts2+='<option value="0"'+(!p.pos?' selected':'')+'>Nessuna posizione</option>';
+  openModal('<h3>Posizione di salto</h3><div class="ms">'+esc((p.cognome||'')+' '+(p.nome||''))+' · posizione standard attuale: <b>'+(p.pos||'nessuna')+'</b>'+(hasOv?' · in '+ml+': <b>'+(+ov||'nessun salto')+'</b>':'')+'</div>'
+    +'<h4>Solo per '+ml+'</h4><select id="soMese">'+opts1+'</select>'
+    +'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="saveSaltoMese(\''+pid+'\')">Salva solo per '+ml+'</button>'
+    +'<h4>Cambio definitivo, da '+ml+' in poi</h4><select id="soSempre">'+opts2+'</select>'
+    +'<div class="hint">I mesi precedenti non cambiano.</div>'
+    +'<button class="btn btn-fire btn-full" style="margin-top:0.45rem" onclick="saveSaltoSempre(\''+pid+'\')">Salva da '+ml+' in poi</button>');
+}
+function saveSaltoMese(pid){ const v=val('soMese'); const r=db.ref(refMese()+'/saltoOv/'+pid); W(v===''?r.remove():r.set(+v)); closeModal(); }
+function saveSaltoSempre(pid){ const v=+val('soSempre'); W(db.ref(refTurno()+'/personale/'+pid+'/hist/'+curMk()+'/pos').set(v)); closeModal(); }
+
+/* ---------- PRESENZE GIORNALIERE ---------- */
+function dayRoster(day){
   const du=dutyFor(engTurno(),S.year,S.month,day);
-  return personArr().map(p=>{ const stored=cellCode(p.id,day); const isRday=(effPos(p)===du.salto);
+  return personArr().map(p=>{ const stored=cellCode(p.id,day), isRday=(effPos(p)===du.salto);
     let isR,code; if(stored==='RS'){ isR=false; code='RS'; } else if(isRday){ isR=true; code='R'; } else { isR=false; code=stored; }
     return {p,isR,code,du}; });
 }
@@ -416,33 +563,31 @@ function scPresenze(){
   const wd=workingDays(engTurno(),S.year,S.month);
   if(!wd.length) return periodControls()+'<div class="note">Nessuna giornata di servizio per questo turno nel mese selezionato.</div>';
   if(!S.curDay || !wd.find(w=>w.day===S.curDay)) S.curDay=wd[0].day;
-  const du=dutyFor(engTurno(),S.year,S.month,S.curDay);
-  const dd=new Date(S.year,S.month-1,S.curDay);
+  const du=dutyFor(engTurno(),S.year,S.month,S.curDay), dd=new Date(S.year,S.month-1,S.curDay);
   let dayOpts=wd.map(w=>'<option value="'+w.day+'"'+(w.day===S.curDay?' selected':'')+'>'+w.day+' '+MESI[S.month-1]+' ('+w.tipo+')</option>').join('');
-  const ros=dayRoster(S.curDay);
   let pres=0,ass=0,rec=0;
-  let list=ros.map(r=>{
+  let list=dayRoster(S.curDay).map(r=>{
     const note=(S.note[S.curDay]&&S.note[S.curDay][r.p.id])||'';
     let cls,tag;
     if(r.isR){ rec++; cls='rec'; tag='<span class="tag" style="background:#EDEFEA;color:#737A70">Recupero</span>'; }
     else if(r.code==='RS'){ pres++; cls='ok'; tag='<span class="tag" style="background:#FAF1D6;color:#876200">Rientro straord.</span>'; }
-    else if(r.code && ABSENCE.indexOf(r.code)>=0){ ass++; const col=codeColor(r.code); cls='ko'; tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">Assente \u00b7 '+r.code+'</span>'; }
+    else if(isAbsent(r.code)){ ass++; const col=codeColor(r.code); cls='ko'; tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">Assente · '+esc(r.code)+'</span>'; }
     else { pres++; cls='ok'; tag='<span class="tag" style="background:#E3F1E4;color:#1E6B39">Presente</span>'; }
-    return '<div class="row '+cls+'"><div><div class="rn">'+r.p.q+' \u00b7 '+(r.p.cognome||'')+' '+(r.p.nome||'')+'</div>'
-      +'<input style="border:none;background:none;font-size:0.72rem;color:#5B636E;width:100%;margin-top:0.1rem" placeholder="note (es. autista, capo partenza)" value="'+note.replace(/"/g,'&quot;')+'" onchange="setNote(\''+r.p.id+'\','+S.curDay+',this.value)"></div>'+tag+'</div>';
+    return '<div class="row '+cls+'"><div style="flex:1;min-width:0"><div class="rn">'+esc(r.p.q)+' · '+esc((r.p.cognome||'')+' '+(r.p.nome||''))+'</div>'
+      +'<input style="border:none;background:none;font-size:0.72rem;color:var(--ink2);width:100%;margin-top:0.1rem" placeholder="note (es. autista, capo partenza)" value="'+esc(note)+'" onchange="setNote(\''+r.p.id+'\','+S.curDay+',this.value)"></div>'+tag+'</div>';
   }).join('');
-  // esterni
   const ext=(S.esterni[S.curDay])||{};
-  let extHtml=Object.keys(ext).map(eid=>{ const e=ext[eid]; const b=e.motivo==='Straordinario'?['#FAF1D6','#876200','1 buono']:['#EDEFEA','#737A70','0 buoni']; return '<div class="row ext"><div><div class="rn">'+e.q+' \u00b7 '+e.cognome+' '+e.nome+'</div><div class="rs">'+(e.prov||'')+' \u00b7 '+e.motivo+'</div></div><div style="display:flex;gap:0.4rem;align-items:center"><span class="tag" style="background:'+b[0]+';color:'+b[1]+'">'+e.motivo+' \u00b7 '+b[2]+'</span><button class="icon-btn" onclick="delExternal('+S.curDay+',\''+eid+'\')">'+ICONS.trash+'</button></div></div>'; }).join('');
-  // mezzi
+  let extHtml=Object.keys(ext).map(eid=>{ const e=ext[eid]||{}; pres++; const b=e.motivo==='Straordinario'?['#FAF1D6','#876200','1 buono']:['#EDEFEA','#737A70','0 buoni'];
+    return '<div class="row ext"><div><div class="rn">'+esc(e.q)+' · '+esc((e.cognome||'')+' '+(e.nome||''))+'</div><div class="rs">'+esc(e.prov||'')+' · '+esc(e.motivo)+'</div></div><div style="display:flex;gap:0.4rem;align-items:center"><span class="tag" style="background:'+b[0]+';color:'+b[1]+'">'+esc(e.motivo)+' · '+b[2]+'</span><button class="icon-btn" onclick="delExternal('+S.curDay+',\''+eid+'\')">'+ICONS.trash+'</button></div></div>'; }).join('');
   const mezzi=S.mezzi||{}, mop=(S.mezziOp&&S.mezziOp[S.curDay])||{};
-  let mezHtml=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return '<div class="veh"><span>'+(mezzi[id].nome||'')+'</span><button class="btn btn-xs '+(op?'btn-out':'btn-out')+'" style="'+(op?'color:#1E6B39;border-color:#9FCBAA':'color:#C8102E;border-color:#E3A6AE')+'" onclick="toggleMezzoOp('+S.curDay+',\''+id+'\','+(!op)+')">'+(op?'Operativo':'Non operativo')+'</button></div>'; }).join('');
-  if(!Object.keys(mezzi).length) mezHtml='<div class="rs">Nessun mezzo configurato (aggiungili in Setup).</div>';
+  let mezHtml=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return '<div class="veh"><span>'+esc(mezzi[id].nome||'')+'</span><button class="btn btn-xs btn-out" style="'+(op?'color:#1E6B39;border-color:#9FCBAA':'color:#C8102E;border-color:#E3A6AE')+'" onclick="toggleMezzoOp('+S.curDay+',\''+id+'\','+(!op)+')">'+(op?'Operativo':'Non operativo')+'</button></div>'; }).join('');
+  if(!Object.keys(mezzi).length) mezHtml='<div class="rs">Nessun mezzo configurato (aggiungili in Impostazioni).</div>';
   return periodControls('<div class="field" style="flex:1.4"><label class="eyebrow">Giornata</label><select onchange="S.curDay=+this.value;render()">'+dayOpts+'</select></div>')
-    +'<div class="ms" style="font-size:0.78rem;color:#5B636E;margin:-0.5rem 0 0.8rem">'+WDL[dd.getDay()]+' '+S.curDay+' '+MESI[S.month-1]+' '+S.year+' \u00b7 servizio '+(du.tipo==='G'?'diurno 08:00-20:00':'notturno 20:00-08:00')+'</div>'
+    +'<div class="rs" style="font-size:0.78rem;margin:-0.5rem 0 0.8rem">'+WDL[dd.getDay()]+' '+S.curDay+' '+MESI[S.month-1]+' '+S.year+' · servizio '+(du.tipo==='G'?'diurno 08:00-20:00':'notturno 20:00-08:00')+'</div>'
+    +dupWarning()
     +'<div class="stats3"><div class="stat"><div class="v" style="color:#2C8B4B">'+pres+'</div><div class="l">Presenti</div></div><div class="stat"><div class="v" style="color:#C8102E">'+ass+'</div><div class="l">Assenti</div></div><div class="stat"><div class="v" style="color:#737A70">'+rec+'</div><div class="l">Recupero</div></div></div>'
     +list
-    +'<div class="sec-h"><span class="eyebrow">Personale esterno presso Lentini</span></div>'+(extHtml||'')+'<button class="btn btn-out btn-full" onclick="externalModal('+S.curDay+')" style="margin-top:0.3rem">+ Aggiungi personale esterno</button>'
+    +'<div class="sec-h"><span class="eyebrow">Personale esterno presso Lentini</span></div>'+extHtml+'<button class="btn btn-out btn-full" onclick="externalModal('+S.curDay+')" style="margin-top:0.3rem">+ Aggiungi personale esterno</button>'
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezHtml
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'pres\','+S.curDay+')">'+ICONS.check+' Genera PDF presenze del giorno</button>';
 }
@@ -451,7 +596,7 @@ function pickExt(i){ const x=_extPick[i]||{}; const set=(id,v)=>{const e=documen
 function externalModal(day){
   let qo=QUALIFICHE.map(q=>'<option>'+q+'</option>').join('');
   _extPick=esterniRows();
-  let already = _extPick.length ? '<div class="eyebrow" style="margin-bottom:0.35rem">Gi\u00e0 inseriti questo mese \u2014 tocca per ripetere</div><div style="margin-bottom:0.7rem">'+_extPick.map((x,i)=>'<button class="btn btn-out btn-xs" style="margin:0 0.3rem 0.3rem 0" onclick="pickExt('+i+')">'+x.q+' '+x.cognome+' '+x.nome+'</button>').join('')+'</div>' : '';
+  let already = _extPick.length ? '<div class="eyebrow" style="margin-bottom:0.35rem">Già inseriti questo mese — tocca per ripetere</div><div style="margin-bottom:0.7rem">'+_extPick.map((x,i)=>'<button class="btn btn-out btn-xs" style="margin:0 0.3rem 0.3rem 0" onclick="pickExt('+i+')">'+esc(x.q+' '+x.cognome+' '+x.nome)+'</button>').join('')+'</div>' : '';
   openModal('<h3>Personale esterno</h3><div class="ms">'+day+' '+MESI[S.month-1]+'</div>'+already
     +'<label class="eyebrow">Qualifica</label><select id="exQual">'+qo+'</select>'
     +'<label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="exCognome">'
@@ -461,18 +606,28 @@ function externalModal(day){
     +'<button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveExternal('+day+')">Aggiungi</button>');
 }
 
+/* ---------- PROSPETTO FERIE ---------- */
 function scFerie(){
-  const wd=workingDays(engTurno(),S.year,S.month);
+  const Y=S.year, people=personArr();
+  const rows=people.map(p=>{
+    const sp=spettanti(p,Y), res=residuo(p,Y), g=countInYear(p.id,Y,['L','CP']);
+    const meseL=Object.keys(S.cells[p.id]||{}).filter(d=>S.cells[p.id][d]==='L').length;
+    const ready=(res!=null && g!=null);
+    const disp = ready ? (sp+res-g.L) : null;
+    return '<div class="row"><div><div class="rn">'+esc(p.q)+' · '+esc((p.cognome||'')+' '+(p.nome||''))+'</div>'
+      +'<div class="rs">Spettanti '+Y+': <b>'+sp+'</b> · Residue '+(Y-1)+': <b>'+(res==null?'…':res)+'</b> · Godute '+Y+': <b>'+(g==null?'…':g.L)+'</b>'+(meseL?' (di cui '+meseL+' in '+MESI[S.month-1]+')':'')
+      +((p.cong||(g&&g.CP))?' · Congedo parentale: '+(p.cong||0)+' gg'+(g?' (usati '+Y+': '+g.CP+')':''):'')+'</div></div>'
+      +'<div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.3rem;color:'+(disp!=null&&disp<0?'#C8102E':'#1F5C99')+';line-height:1">'+(disp==null?'…':disp)+'</div><div class="rs">da godere</div></div></div>';
+  }).join('');
   return periodControls()
-    +'<div class="note" style="margin-top:0">Il prospetto da inviare al Capo Turno (entro il 20 per il mese successivo) mostra le giornate di servizio, i <b>salti (R)</b> e le <b>ferie (L)</b>. Malattie e sostituzioni si registrano durante il mese e non compaiono qui.</div>'
-    +'<div class="sec-h"><span class="eyebrow">Saldi ferie del turno</span></div>'
-    +personArr().map(p=>{ const res=(p.fSpett||0)+(p.fRes||0)-ferieGodute(p.id); return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">Spettanti '+S.year+': '+(p.fSpett||0)+' \u00b7 Residue '+(S.year-1)+': '+(p.fRes||0)+' \u00b7 Godute (anno): n.d.'+(p.cong?' \u00b7 Congedo: '+p.cong+' gg':'')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.3rem;color:#1F5C99;line-height:1">'+res+'</div><div class="rs">residue (mese)</div></div></div>'; }).join('')
+    +'<div class="note" style="margin-top:0">Il prospetto da inviare al Capo Turno (entro il 20 per il mese successivo) mostra le giornate di servizio, i <b>salti (R)</b> e le <b>ferie (L)</b>. Le ferie si segnano nel Prospetto mensile con <b>L</b>.</div>'
+    +'<div class="sec-h"><span class="eyebrow">Saldi ferie '+Y+'</span></div>'+(rows||'<div class="rs">Nessuna persona in servizio.</div>')
+    +'<div class="cap" style="text-align:left">Da godere = spettanti '+Y+' + residue '+(Y-1)+' − godute '+Y+'. Le residue si calcolano da sole dall’anno prima; puoi correggerle a mano in Impostazioni.</div>'
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Genera PDF prospetto / richiesta ferie</button>';
 }
-function ferieGodute(pid){ let n=0; const c=S.cells[pid]||{}; Object.keys(c).forEach(d=>{ if(c[d]==='L') n++; }); return n; }
 
-function rk(q){ return (RANK[q]!==undefined)?RANK[q]:99; }
-function esterniRows(){ // raggruppa gli esterni del mese per persona: {q,cognome,nome,prov,days:{day:motivo}}
+/* ---------- BUONI PASTO ---------- */
+function esterniRows(){ // esterni del mese raggruppati per persona
   const map={};
   Object.keys(S.esterni||{}).forEach(day=>{ const e=S.esterni[day]||{}; Object.keys(e).forEach(eid=>{ const x=e[eid]||{};
     const k=(x.q||'')+'|'+((x.cognome||'').trim().toLowerCase())+'|'+((x.nome||'').trim().toLowerCase());
@@ -482,77 +637,144 @@ function esterniRows(){ // raggruppa gli esterni del mese per persona: {q,cognom
   return Object.keys(map).sort((a,b)=>rk(map[a].q)-rk(map[b].q)).map(k=>map[k]);
 }
 function esternoBuoni(days){ let t=0; Object.keys(days).forEach(d=>{ if(days[d]==='Straordinario') t++; }); return t; }
-function subsMonth(pid){ const c=S.cells[pid]||{}; let sd=0,sn=0; Object.keys(c).forEach(d=>{ if(c[d]==='SD')sd++; else if(c[d]==='SN')sn++; }); return {sd,sn}; }
-function ensureYearSubs(){ // conteggio SD/SN dell'intero anno (lettura una-tantum di tutti i mesi)
-  const key=S.turno+'/'+S.year; if(S._subsKey===key) return; S._subsKey=key; S.subsYear=null; if(!db) return;
-  db.ref('turni/'+S.turno+'/anno/'+S.year+'/mesi').once('value').then(function(snap){ const v=snap.val()||{}, acc={};
-    Object.keys(v).forEach(function(mk){ const celle=(v[mk]&&v[mk].celle)||{}; Object.keys(celle).forEach(function(pid){ const days=celle[pid]||{}; Object.keys(days).forEach(function(d){ const code=days[d]; if(code==='SD'||code==='SN'){ acc[pid]=acc[pid]||{sd:0,sn:0}; if(code==='SD')acc[pid].sd++; else acc[pid].sn++; } }); }); });
-    S.subsYear=acc; if(S.tab===3) render();
-  }).catch(function(){ S.subsYear={}; if(S.tab===3) render(); });
+/* Regola unica usata da schermata e PDF: valore buoni di una casella */
+function buonoCella(p,c){
+  const code=cellCode(p.id,c.day), isRday=(effPos(p)===c.salto);
+  if(code==='RS') return {show:'RS',val:1};
+  if(isRday) return {show:'R',val:0};
+  if(code==='SD') return {show:'SD',val:2};
+  if(code==='SN') return {show:'SN',val:1};
+  if(isAbsent(code)) return {show:code,val:0};
+  return {show:(code&&code!=='P')?code:'',val:1};
 }
-function refreshYearSubs(){ S._subsKey=null; ensureYearSubs(); }
-function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
-  const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0;
-  wd.forEach(c=>{ const code=cellCode(p.id,c.day); const isRday=(effPos(p)===c.salto);
-    if(code==='RS'){ pres++; return; } if(isRday) return;
-    if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
-  return {pres,sd,sn,tot:pres+2*sd+sn};
+function buoniPerson(p){
+  const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0,tot=0;
+  wd.forEach(c=>{ const b=buonoCella(p,c); tot+=b.val; if(b.show==='SD') sd++; else if(b.show==='SN') sn++; else if(b.val===1) pres++; });
+  return {pres,sd,sn,tot};
 }
 function scBuoni(){
   const people=personArr(); let tot=0;
-  let rows=people.map(p=>{ const b=buoniPerson(p); tot+=b.tot; let bd=[b.pres+' presenze']; if(b.sd)bd.push(b.sd+' SD'); if(b.sn)bd.push(b.sn+' SN'); return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">'+bd.join(' \u00b7 ')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b.tot+'</div><div class="rs">buoni</div></div></div>'; }).join('');
-  // esterni del mese, raggruppati per persona
+  let rows=people.map(p=>{ const b=buoniPerson(p); tot+=b.tot; let bd=[b.pres+' presenze']; if(b.sd)bd.push(b.sd+' SD'); if(b.sn)bd.push(b.sn+' SN');
+    return '<div class="row"><div><div class="rn">'+esc(p.q)+' · '+esc((p.cognome||'')+' '+(p.nome||''))+'</div><div class="rs">'+bd.join(' · ')+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b.tot+'</div><div class="rs">buoni</div></div></div>'; }).join('');
   let extTot=0, extRows='';
-  esterniRows().forEach(x=>{ const b=esternoBuoni(x.days); extTot+=b; const dl=Object.keys(x.days).sort((a,b)=>a-b).map(d=>d+(x.days[d]==='Straordinario'?'\u00b7str':'\u00b7sos')).join(', ');
-    extRows+='<div class="row ext"><div><div class="rn">'+x.q+' \u00b7 '+x.cognome+' '+x.nome+'</div><div class="rs">'+(x.prov||'esterno')+' \u00b7 giorni '+dl+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; });
+  esterniRows().forEach(x=>{ const b=esternoBuoni(x.days); extTot+=b; const dl=Object.keys(x.days).sort((a,b)=>a-b).map(d=>d+(x.days[d]==='Straordinario'?'·str':'·sos')).join(', ');
+    extRows+='<div class="row ext"><div><div class="rn">'+esc(x.q)+' · '+esc(x.cognome+' '+x.nome)+'</div><div class="rs">'+esc(x.prov||'esterno')+' · giorni '+dl+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; });
   tot+=extTot;
-  ensureYearSubs();
-  let subRows=people.map(p=>{ const m=subsMonth(p.id); const y=(S.subsYear&&S.subsYear[p.id])||{sd:0,sn:0};
-    const ystr = S.subsYear ? (y.sd+' SD \u00b7 '+y.sn+' SN') : 'calcolo\u2026';
-    return '<div class="row"><div><div class="rn">'+p.q+' \u00b7 '+(p.cognome||'')+' '+(p.nome||'')+'</div><div class="rs">Mese: <b>'+m.sd+'</b> SD \u00b7 <b>'+m.sn+'</b> SN</div></div><div style="text-align:right"><div class="rs" style="font-weight:600;color:#1F5C99">Anno '+S.year+'</div><div class="rs">'+ystr+'</div></div></div>'; }).join('');
+  let subRows=people.map(p=>{ const m=countInYear(p.id,S.year,['SD','SN']); const mm={sd:0,sn:0}; Object.keys(S.cells[p.id]||{}).forEach(d=>{ const v=S.cells[p.id][d]; if(v==='SD')mm.sd++; else if(v==='SN')mm.sn++; });
+    return '<div class="row"><div><div class="rn">'+esc(p.q)+' · '+esc((p.cognome||'')+' '+(p.nome||''))+'</div><div class="rs">'+cap1(MESI[S.month-1])+': <b>'+mm.sd+'</b> SD · <b>'+mm.sn+'</b> SN</div></div><div style="text-align:right"><div class="rs" style="font-weight:600;color:#1F5C99">Anno '+S.year+'</div><div class="rs">'+(m?(m.SD+' SD · '+m.SN+' SN'):'calcolo…')+'</div></div></div>'; }).join('');
   return periodControls()
-    +'<div class="sec-h"><span class="eyebrow">Buoni pasto \u2014 personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
-    +(extRows?'<div class="sec-h"><span class="eyebrow">Buoni pasto \u2014 personale esterno</span></div>'+extRows:'')
-    +'<div class="row" style="border-left:3px solid #C8102E;background:#FCEBEE"><div class="rn cond" style="font-size:1.05rem">TOTALE TURNO '+S.turno+'</div><div class="cond" style="font-weight:700;font-size:1.6rem;color:#C8102E">'+tot+'</div></div>'
-    +'<div class="note">Presente = 1 \u00b7 sost. diurna = 2 \u00b7 sost. notturna = 1 \u00b7 esterno in straordinario = 1 \u00b7 esterno in sostituzione = 0.</div>'
+    +'<div class="sec-h"><span class="eyebrow">Buoni pasto — personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
+    +(extRows?'<div class="sec-h"><span class="eyebrow">Buoni pasto — personale esterno</span></div>'+extRows:'')
+    +'<div class="row" style="border-left:3px solid #C8102E;background:#FCEBEE"><div class="rn cond" style="font-size:1.05rem;color:#10151E">TOTALE TURNO '+esc(S.turno)+'</div><div class="cond" style="font-weight:700;font-size:1.6rem;color:#C8102E">'+tot+'</div></div>'
+    +'<div class="note">Presente = 1 · rientro straordinario = 1 · sost. diurna = 2 · sost. notturna = 1 · esterno in straordinario = 1 · esterno in sostituzione = 0.</div>'
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'buoni\')">'+ICONS.ticket+' Genera PDF buoni pasto</button>'
-    +'<div class="sec-h"><span class="eyebrow">Contabilit\u00e0 sostituzioni del personale</span></div>'
-    +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell\u2019anno.</div>'+subRows
-    +'<button class="btn btn-out btn-full btn-xs" style="margin-top:0.3rem" onclick="refreshYearSubs()">Aggiorna totali anno</button>';
+    +'<div class="sec-h"><span class="eyebrow">Contabilità sostituzioni del personale</span></div>'
+    +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell’anno.</div>'+subRows;
 }
 
+/* ---------- IMPOSTAZIONI ---------- */
 function scSetup(){
-  const people=personArr();
-  let staff=people.map(p=>'<div class="scard"><div class="scard-top"><span class="pq">'+p.q+'</span><span style="flex:1;font-weight:600">'+(p.cognome||'')+' '+(p.nome||'')+'</span>'
-    +'<button class="icon-btn" onclick="personModal(\''+p.id+'\')">'+ICONS.edit+'</button><button class="icon-btn" onclick="delPerson(\''+p.id+'\')">'+ICONS.trash+'</button></div>'
-    +'<div class="ferflds"><div class="ferf"><span class="eyebrow">Posizione salto</span><div class="v">'+(p.pos||'\u2014')+'</div></div>'
-    +'<div class="ferf"><span class="eyebrow">Ferie spett. '+S.year+'</span><div class="v">'+(p.fSpett||0)+'</div></div>'
-    +'<div class="ferf"><span class="eyebrow">Ferie res. '+(S.year-1)+'</span><div class="v">'+(p.fRes||0)+'</div></div></div>'
-    +'<div class="salto-row"><span class="eyebrow">Salto turno</span><button class="btn btn-out btn-xs" onclick="applySalto(\''+p.id+'\',\'mese\')">Solo questo mese</button><button class="btn btn-out btn-xs" onclick="applySalto(\''+p.id+'\',\'sempre\')">In generale</button></div></div>').join('');
+  const people=personArr(), off=inactiveArr(), ml=MESI[S.month-1]+' '+S.year, Y=S.year;
+  const card=(p,active)=>{ const sp=spettanti(p,Y), e=ferieCfg(p,Y), resMan=(e&&e.res!=null&&e.res!=='');
+    const stato = !active ? (p.al && curMk()>p.al ? 'Cessato dopo '+mkLabel(p.al) : (p.dal?'In servizio da '+mkLabel(p.dal):'Non in servizio')) : '';
+    return '<div class="scard'+(active?'':' off')+'"><div class="scard-top"><span class="pq">'+esc(p.q)+'</span><span style="flex:1;font-weight:600">'+esc((p.cognome||'')+' '+(p.nome||''))+'</span>'
+    +'<button class="icon-btn" title="Modifica" onclick="personModal(\''+p.id+'\')">'+ICONS.edit+'</button></div>'
+    +(stato?'<div class="rs" style="margin-top:0.3rem">'+stato+'</div>':'')
+    +'<div class="ferflds"><div class="ferf"><span class="eyebrow">Posizione salto</span><div class="v">'+(p.pos||'—')+(S.saltoOv[p.id]!=null&&active?' <span class="rs">(in '+MESI[S.month-1]+': '+(+S.saltoOv[p.id]||'nessuno')+')</span>':'')+'</div></div>'
+    +'<div class="ferf"><span class="eyebrow">Ferie spett. '+Y+'</span><div class="v">'+sp+'</div></div>'
+    +'<div class="ferf"><span class="eyebrow">Ferie res. '+(Y-1)+'</span><div class="v">'+(resMan?(+e.res):'auto')+'</div></div></div>'
+    +(active?'<div class="salto-row"><button class="btn btn-out btn-xs" onclick="saltoModal(\''+p.id+'\')">Posizione di salto</button><button class="btn btn-out btn-xs" onclick="cessaModal(\''+p.id+'\')">Cessato / trasferito</button></div>'
+            :'<div class="salto-row"><button class="btn btn-out btn-xs" onclick="riattiva(\''+p.id+'\')">Rimetti in servizio</button></div>')
+    +'</div>'; };
   const c=allCodici();
-  let codes=Object.keys(c).map(k=>'<div class="code-row"><span class="chipc" style="background:'+c[k][1]+';color:'+c[k][2]+'">'+k+'</span><span style="flex:1">'+c[k][0]+'</span>'+(DEFAULT_CODICI[k]?'':'<button class="icon-btn" onclick="delCode(\''+k+'\')">'+ICONS.trash+'</button>')+'</div>').join('');
-  let mezzi=Object.keys(S.mezzi||{}).map(id=>'<div class="code-row"><span style="flex:1">'+(S.mezzi[id].nome||'')+'</span><button class="icon-btn" onclick="mezzoModal(\''+id+'\')">'+ICONS.edit+'</button><button class="icon-btn" onclick="delMezzo(\''+id+'\')">'+ICONS.trash+'</button></div>').join('');
-  return '<div class="note" style="margin-top:0">Le persone e le ferie impostate qui alimentano prospetto, presenze e buoni. La <b>posizione</b> (1-8) determina i salti turno calcolati automaticamente.</div>'
-    +'<div class="sec-h"><span class="eyebrow">Personale del turno '+S.turno+'</span></div>'+staff
+  let codes=Object.keys(c).map(k=>{ const custom=!DEFAULT_CODICI[k]; const tipo = custom ? (c[k][3]==='P'?'presenza':'assenza') : (ABSENCE.indexOf(k)>=0?'assenza':'presenza');
+    return '<div class="code-row"><span class="chipc" style="background:'+c[k][1]+';color:'+c[k][2]+'">'+esc(k)+'</span><span style="flex:1">'+esc(c[k][0])+' <span class="rs">· '+tipo+'</span></span>'+(custom?'<button class="icon-btn" onclick="delCode(\''+k+'\')">'+ICONS.trash+'</button>':'')+'</div>'; }).join('');
+  let mezzi=Object.keys(S.mezzi||{}).map(id=>'<div class="code-row"><span style="flex:1">'+esc(S.mezzi[id].nome||'')+'</span><button class="icon-btn" onclick="mezzoModal(\''+id+'\')">'+ICONS.edit+'</button><button class="icon-btn" onclick="delMezzo(\''+id+'\')">'+ICONS.trash+'</button></div>').join('');
+  return periodControls()
+    +'<div class="note" style="margin-top:0">I valori mostrati sono quelli di <b>'+ml+'</b>. Qualifica e posizione modificate valgono <b>da questo mese in poi</b>: i mesi passati non cambiano.</div>'
+    +dupWarning()
+    +'<div class="sec-h"><span class="eyebrow">Personale in servizio — turno '+esc(S.turno)+'</span></div>'+(people.map(p=>card(p,true)).join('')||'<div class="rs">Nessuno.</div>')
     +'<button class="btn btn-out btn-full" onclick="personModal(null)" style="margin-top:0.3rem">+ Aggiungi persona</button>'
+    +(off.length?'<div class="sec-h"><span class="eyebrow">Non in servizio in '+ml+'</span></div>'+off.map(p=>card(p,false)).join(''):'')
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezzi+'<button class="btn btn-out btn-full" onclick="mezzoModal(null)" style="margin-top:0.3rem">+ Aggiungi mezzo</button>'
-    +'<div class="sec-h"><span class="eyebrow">Codici assenza</span></div>'+codes+'<button class="btn btn-out btn-full" onclick="codeModal()" style="margin-top:0.3rem">+ Aggiungi codice</button>'
-    +'<div class="sec-h"><span class="eyebrow">Account</span></div><div class="row"><div><div class="rn">'+S.email+'</div><div class="rs">'+(S.isAdmin?'Amministratore (tutti i turni)':'Turno '+S.turno)+'</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
-    +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+SEDE+'</span><span class="tag" style="background:#EDEFEA;color:#737A70">Fissa</span></div>';
+    +'<div class="sec-h"><span class="eyebrow">Codici</span></div>'+codes+'<button class="btn btn-out btn-full" onclick="codeModal()" style="margin-top:0.3rem">+ Aggiungi codice</button>'
+    +'<div class="sec-h"><span class="eyebrow">Account</span></div><div class="row"><div><div class="rn">'+esc(S.email)+'</div><div class="rs">'+(S.isAdmin?'Amministratore (tutti i turni)':'Turno '+esc(S.turno))+'</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
+    +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="background:#EDEFEA;color:#737A70">Fissa</span></div>';
 }
 function personModal(id){
-  const p=id?S.personale[id]:{q:'VP',cognome:'',nome:'',pos:'',fSpett:0,fRes:0,cong:0};
+  const isNew=!id, ml=MESI[S.month-1]+' '+S.year, Y=S.year;
+  const p=isNew?{q:'VP',cognome:'',nome:'',pos:0,cong:0}:personAt(id,curMk());
+  const e=isNew?null:ferieCfg(p,Y);
+  const spVal=(e&&e.spett!=null&&e.spett!=='')?e.spett:'', resVal=(e&&e.res!=null&&e.res!=='')?e.res:'';
+  const spInh=isNew?0:spettanti(p,Y), resAuto=isNew?null:residuo(Object.assign({},p,{ferie:Object.assign({},p.ferie||{},{['y'+Y]:{spett:spVal}})}),Y);
   let qo=QUALIFICHE.map(q=>'<option value="'+q+'"'+(q===p.q?' selected':'')+'>'+q+'</option>').join('');
-  let po='<option value="">\u2014</option>'; for(let i=1;i<=8;i++) po+='<option value="'+i+'"'+(p.pos==i?' selected':'')+'>'+i+'</option>';
-  openModal('<h3>'+(id?'Modifica persona':'Nuova persona')+'</h3><div class="ms">Qualifica, nominativo, posizione e ferie</div>'
+  let po='<option value="0">—</option>'; for(let i=1;i<=8;i++) po+='<option value="'+i+'"'+(p.pos===i?' selected':'')+'>'+i+'</option>';
+  const when = isNew
+    ? '<h4>In servizio nel turno</h4><label class="radio"><input type="radio" name="pmWhen" value="mese" checked> Da '+ml+'</label><label class="radio"><input type="radio" name="pmWhen" value="sempre"> Da sempre (compare anche nei mesi passati)</label>'
+    : '<h4>Qualifica e posizione valgono</h4><label class="radio"><input type="radio" name="pmWhen" value="mese" checked> Da '+ml+' in poi (i mesi passati non cambiano)</label><label class="radio"><input type="radio" name="pmWhen" value="sempre"> Da sempre (solo per correggere un errore di inserimento)</label>';
+  openModal('<h3>'+(isNew?'Nuova persona':'Modifica persona')+'</h3><div class="ms">'+(isNew?'Inserisci i dati del vigile':'Valori di '+ml)+'</div>'
     +'<label class="eyebrow">Qualifica</label><select id="edQual">'+qo+'</select>'
-    +'<div style="display:flex;gap:0.5rem"><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="edCognome" value="'+(p.cognome||'')+'"></div><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Nome</label><input id="edNome" value="'+(p.nome||'')+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Pos.</label><select id="edPos">'+po+'</select></div></div>'
-    +'<div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Ferie spett. '+S.year+'</label><input id="edF0" type="number" value="'+(p.fSpett||0)+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Ferie res. '+(S.year-1)+'</label><input id="edF1" type="number" value="'+(p.fRes||0)+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Congedo</label><input id="edCong" type="number" value="'+(p.cong||0)+'"></div></div>'
+    +'<div style="display:flex;gap:0.5rem"><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Cognome</label><input id="edCognome" value="'+esc(p.cognome)+'"></div><div style="flex:2"><label class="eyebrow" style="margin-top:0.5rem">Nome</label><input id="edNome" value="'+esc(p.nome)+'"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Pos.</label><select id="edPos">'+po+'</select></div></div>'
+    +when
+    +'<h4>Ferie '+Y+'</h4><div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow">Spettanti '+Y+'</label><input id="edF0" type="number" inputmode="numeric" value="'+esc(spVal)+'" placeholder="'+(isNew?'0':'come anno prima: '+spInh)+'"></div>'
+    +'<div style="flex:1"><label class="eyebrow">Residue '+(Y-1)+'</label><input id="edF1" type="number" inputmode="numeric" value="'+esc(resVal)+'" placeholder="'+(resAuto==null?'automatico':'automatico: '+resAuto)+'"></div></div>'
+    +'<div class="hint">Lascia vuoto per usare i valori automatici (spettanti come l’anno prima, residue calcolate). Scrivi un numero solo per il primo anno o per correggere.</div>'
+    +'<label class="eyebrow" style="margin-top:0.6rem">Congedo parentale (gg)</label><input id="edCong" type="number" inputmode="numeric" value="'+(+p.cong||0)+'">'
     +'<button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="savePerson('+(id?'\''+id+'\'':'null')+')">Salva</button>'
-    +(id?'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="delPerson(\''+id+'\')">Elimina</button>':''));
+    +(id?'<button class="btn btn-out btn-full" style="margin-top:0.45rem;color:#C8102E" onclick="delPerson(\''+id+'\')">Elimina definitivamente</button><div class="hint" style="text-align:center">Solo per errori di inserimento. Per chi va via usa “Cessato / trasferito”.</div>':''));
 }
-function codeModal(){ openModal('<h3>Nuovo codice assenza</h3><div class="ms">Sigla, descrizione e colori</div><label class="eyebrow">Sigla</label><input id="cdCode" maxlength="3" placeholder="es. AS"><label class="eyebrow" style="margin-top:0.5rem">Descrizione</label><input id="cdLabel"><div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore sfondo</label><input id="cdBg" type="color" value="#EDEFEA"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore testo</label><input id="cdTx" type="color" value="#10151E"></div></div><button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveCode()">Salva</button>'); }
-function mezzoModal(id){ const m=id?S.mezzi[id]:{nome:''}; openModal('<h3>'+(id?'Modifica mezzo':'Nuovo mezzo')+'</h3><label class="eyebrow">Denominazione</label><input id="mzNome" value="'+(m.nome||'')+'" placeholder="es. APS/MAN VF 31698"><button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveMezzo('+(id?'\''+id+'\'':'null')+')">Salva</button>'); }
+function savePerson(id){
+  const q=val('edQual'), pos=+val('edPos')||0, cognome=val('edCognome').trim(), nome=val('edNome').trim(), cong=+val('edCong')||0;
+  const when=(document.querySelector('input[name=pmWhen]:checked')||{}).value||'mese';
+  const spRaw=val('edF0').trim(), resRaw=val('edF1').trim(), Y=S.year;
+  if(!cognome){ alert('Inserisci il cognome.'); return; }
+  if((spRaw!==''&&isNaN(+spRaw))||(resRaw!==''&&isNaN(+resRaw))){ alert('Ferie: inserisci solo numeri.'); return; }
+  const ferieY={spett:spRaw===''?null:+spRaw, res:resRaw===''?null:+resRaw};
+  const ref=db.ref(refTurno()+'/personale');
+  if(!id){
+    const o={q,pos,cognome,nome,cong,ferie:{}};
+    if(ferieY.spett!=null||ferieY.res!=null) o.ferie['y'+Y]=ferieY;
+    if(when==='mese') o.dal=curMk();
+    W(ref.push(o)); closeModal(); return;
+  }
+  const raw=S.personale[id]||{}, at=resolveAt(raw,curMk());
+  const o={cognome,nome,cong};
+  if(when==='sempre'){ o.q=q; o.pos=pos; o.hist=null; }
+  else if(q!==at.q || pos!==at.pos){ o['hist/'+curMk()]={q,pos}; }
+  // migrazione ferie della versione precedente (fSpett/fRes) nella struttura per anno
+  if((raw.fSpett!=null||raw.fRes!=null) && !(raw.ferie&&raw.ferie['y'+LEGACY_FERIE_YEAR]) && Y!==LEGACY_FERIE_YEAR){
+    o['ferie/y'+LEGACY_FERIE_YEAR]={spett:raw.fSpett||0,res:raw.fRes||0};
+  }
+  o.fSpett=null; o.fRes=null;
+  o['ferie/y'+Y]=(ferieY.spett==null&&ferieY.res==null)?null:ferieY;
+  W(ref.child(id).update(o)); closeModal();
+}
+function delPerson(id){
+  const p=S.personale[id]||{};
+  if(!confirm('Eliminare DEFINITIVAMENTE '+(p.cognome||'')+' '+(p.nome||'')+'?\n\nSparirà da tutti i mesi, anche da quelli passati. Se la persona è stata trasferita usa invece "Cessato / trasferito".')) return;
+  W(db.ref(refTurno()+'/personale/'+id).remove()); closeModal();
+}
+function cessaModal(id){
+  const p=S.personale[id]||{}, ml=MESI[S.month-1]+' '+S.year, pk=prevMk();
+  openModal('<h3>Cessato / trasferito</h3><div class="ms">'+esc((p.cognome||'')+' '+(p.nome||''))+'</div>'
+    +'<div class="note" style="margin:0 0 0.8rem">La persona resta in tutti i mesi in cui è stata in servizio (storico, PDF, buoni). Sparisce solo dai mesi successivi.</div>'
+    +'<button class="btn btn-out btn-full" onclick="setAl(\''+id+'\',\''+curMk()+'\')">Ultimo mese di servizio: '+ml+'</button>'
+    +'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="setAl(\''+id+'\',\''+pk+'\')">Ultimo mese di servizio: '+mkLabel(pk)+'</button>');
+}
+function setAl(id,k){ W(db.ref(refTurno()+'/personale/'+id+'/al').set(k)); closeModal(); }
+function riattiva(id){
+  const p=S.personale[id]||{}, k=curMk(), up={};
+  if(p.al && k>p.al) up.al=null;
+  if(p.dal && k<p.dal) up.dal=k;
+  W(db.ref(refTurno()+'/personale/'+id).update(up));
+}
+function codeModal(){ openModal('<h3>Nuovo codice</h3><div class="ms">Sigla, descrizione, tipo e colori</div>'
+  +'<label class="eyebrow">Sigla (max 3)</label><input id="cdCode" maxlength="3" placeholder="es. INF" style="text-transform:uppercase">'
+  +'<label class="eyebrow" style="margin-top:0.5rem">Descrizione</label><input id="cdLabel" placeholder="es. Infortunio">'
+  +'<label class="eyebrow" style="margin-top:0.5rem">Tipo</label><select id="cdTipo"><option value="A">Assenza — non presente, niente buono pasto</option><option value="P">Presenza — conta presente, prende il buono</option></select>'
+  +'<div style="display:flex;gap:0.5rem"><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore sfondo</label><input id="cdBg" type="color" value="#EDEFEA"></div><div style="flex:1"><label class="eyebrow" style="margin-top:0.5rem">Colore testo</label><input id="cdTx" type="color" value="#10151E"></div></div>'
+  +'<button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveCode()">Salva</button>'); }
+function mezzoModal(id){ const m=id?S.mezzi[id]:{nome:''}; openModal('<h3>'+(id?'Modifica mezzo':'Nuovo mezzo')+'</h3><label class="eyebrow">Denominazione</label><input id="mzNome" value="'+esc(m.nome)+'" placeholder="es. APS/MAN VF 31698"><button class="btn btn-fire btn-full" style="margin-top:0.9rem" onclick="saveMezzo('+(id?'\''+id+'\'':'null')+')">Salva</button>'); }
 
 function openModal(html){ document.getElementById('modalBody').innerHTML=html; document.getElementById('overlay').classList.remove('hide'); }
 function closeModal(){ document.getElementById('overlay').classList.add('hide'); }
@@ -571,56 +793,60 @@ function pdfHeader(doc,title,subtitle,W){
   doc.text(subtitle,W/2,33.5,{align:'center'});
 }
 function pdfSign(doc,placeDate,W,y,signer){
+  const H=doc.internal.pageSize.getHeight(); if(y+16>H){ doc.addPage(); y=24; }
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(91,99,110);
   doc.text(placeDate,16,y);
   doc.text('Il Capo Turno',W-66,y);
   doc.text('______________________________',W-66,y+8);
   if(signer){ doc.setFont('helvetica','bold'); doc.setTextColor(16,21,30); doc.text(signer,W-66,y+13); doc.setFont('helvetica','normal'); doc.setTextColor(91,99,110); }
 }
-function hexRGB(h){ h=h.replace('#',''); return [parseInt(h.substr(0,2),16),parseInt(h.substr(2,2),16),parseInt(h.substr(4,2),16)]; }
 
 /* Firma: chiede quale Capo Squadra genera il documento, poi produce il PDF */
 let _pendingPdf=null, _signerList=[];
 function askSigner(kind,arg){
+  if(!window.jspdf){ alert('Il modulo PDF non è ancora caricato. Controlla la connessione e riprova.'); return; }
   const cs=personArr().filter(p=>['CR','CSE','CS'].indexOf(p.q)>=0);
   _signerList = cs.length?cs:personArr();
-  if(!_signerList.length){ alert('Aggiungi prima il personale nel Setup.'); return; }
+  if(!_signerList.length){ alert('Aggiungi prima il personale in Impostazioni.'); return; }
   _pendingPdf={kind,arg};
-  let btns=_signerList.map((p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+p.q+'</span>'+(p.cognome||'')+' '+(p.nome||'')+'</button>').join('');
+  let btns=_signerList.map((p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+'</button>').join('');
   openModal('<h3>Chi firma il documento?</h3><div class="ms">Seleziona il Capo Squadra che lo sta generando</div>'+btns
     +'<div class="cap" style="margin-top:0.4rem">'+(cs.length?'Qualifiche CS / CSE / CR':'Nessun CS in elenco: mostro tutto il personale')+'</div>');
 }
 function doSign(i){
   const p=_signerList[i]; const s=p.q+' '+(p.cognome||'')+' '+(p.nome||''); closeModal();
-  const pp=_pendingPdf||{}; if(pp.kind==='pres') pdfPresenze(pp.arg,s); else if(pp.kind==='ferie') pdfFerie(s); else if(pp.kind==='buoni') pdfBuoni(s);
+  const pp=_pendingPdf||{};
+  try{ if(pp.kind==='pres') pdfPresenze(pp.arg,s); else if(pp.kind==='ferie') pdfFerie(s); else if(pp.kind==='buoni') pdfBuoni(s); }
+  catch(e){ console.error(e); alert('Errore nella creazione del PDF: '+(e&&e.message||e)); }
 }
 
 function pdfPresenze(day,signer){
   const {jsPDF}=window.jspdf; const doc=new jsPDF('p','mm','a4'); const W=210;
   const du=dutyFor(engTurno(),S.year,S.month,day), dd=new Date(S.year,S.month-1,day);
   pdfHeader(doc,'PROSPETTO PRESENZE - TURNO '+S.turno, SEDE+'  -  '+WDL[dd.getDay()]+' '+day+' '+MESI[S.month-1]+' '+S.year+'  -  servizio '+(du.tipo==='G'?'diurno 08:00 / 20:00':'notturno 20:00 / 08:00'),W);
-  const ros=dayRoster(day); let body=[],pres=0,ass=0,rec=0;
-  ros.forEach(r=>{ let note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
-    if(r.isR){ p_=' '; a_='RECUPERO'; rec++; }
-    else if(r.code==='RS'){ p_='SI'; a_=''; pres++; if(!note) note='rientro straordinario'; }
-    else if(ABSENCE.indexOf(r.code)>=0){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; }
+  let body=[],pres=0,ass=0,rec=0;
+  dayRoster(day).forEach(r=>{ let note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
+    if(r.isR){ p_=''; a_='RECUPERO'; rec++; }
+    else if(r.code==='RS'){ p_='SI'; a_=''; pres++; note=note?('rientro straordinario - '+note):'rientro straordinario'; }
+    else if(isAbsent(r.code)){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; }
     else { p_='SI'; a_=''; pres++; }
     body.push([r.p.q,(r.p.cognome||'')+' '+(r.p.nome||''),p_,a_,note]); });
-  Object.keys(S.esterni[day]||{}).forEach(eid=>{ const e=S.esterni[day][eid]; pres++; body.push([e.q,e.cognome+' '+e.nome+' ('+(e.prov||'')+')','SI',e.motivo.toUpperCase(),'esterno']); });
+  Object.keys(S.esterni[day]||{}).forEach(eid=>{ const e=S.esterni[day][eid]||{}; pres++;
+    body.push([e.q||'',(e.cognome||'')+' '+(e.nome||''),'SI','','esterno - '+String(e.motivo||'').toLowerCase()+(e.prov?(' ('+e.prov+')'):'')]); });
   doc.autoTable({ startY:38, head:[['Qualifica','Nominativo','Presente','Assente per causa','Note']], body:body,
     theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,textColor:[16,21,30],lineColor:[154,160,168],lineWidth:0.2},
     headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'},
     alternateRowStyles:{fillColor:[246,247,244]},
-    columnStyles:{0:{halign:'center',cellWidth:22},1:{cellWidth:60},2:{halign:'center',cellWidth:22,fontStyle:'bold'},3:{cellWidth:45},4:{textColor:[91,99,110]}} });
+    columnStyles:{0:{halign:'center',cellWidth:22},1:{cellWidth:56},2:{halign:'center',cellWidth:20,fontStyle:'bold'},3:{cellWidth:40},4:{textColor:[91,99,110]}} });
   let y=doc.lastAutoTable.finalY+5;
   doc.setFontSize(9); doc.setTextColor(16,21,30); doc.setFont('helvetica','normal');
   doc.text('Totale presenti: '+pres+'      Totale assenti: '+ass+'      In recupero: '+rec,16,y); y+=7;
   const mezzi=S.mezzi||{}, mop=(S.mezziOp&&S.mezziOp[day])||{};
   if(Object.keys(mezzi).length){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('ELENCO DEI MEZZI OPERATIVI',16,y); y+=2;
     let mb=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return [mezzi[id].nome||'',op?'SI':'NO',op?'':'non operativo']; });
-    doc.autoTable({ startY:y, head:[['Automezzo','Operativit\u00e0','Note']], body:mb, theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,lineColor:[154,160,168],lineWidth:0.2}, headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'}, alternateRowStyles:{fillColor:[246,247,244]}, columnStyles:{0:{cellWidth:80},1:{halign:'center',cellWidth:30,fontStyle:'bold'}} });
+    doc.autoTable({ startY:y, head:[['Automezzo','Operatività','Note']], body:mb, theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,lineColor:[154,160,168],lineWidth:0.2}, headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'}, alternateRowStyles:{fillColor:[246,247,244]}, columnStyles:{0:{cellWidth:80},1:{halign:'center',cellWidth:30,fontStyle:'bold'}} });
     y=doc.lastAutoTable.finalY; }
-  pdfSign(doc,'Siracusa, '+day+' '+MESI[S.month-1]+' '+S.year,W,y+14,signer);
+  pdfSign(doc,LUOGO+', '+day+' '+MESI[S.month-1]+' '+S.year,W,y+14,signer);
   doc.save('presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf');
 }
 
@@ -630,21 +856,26 @@ function pdfFerie(signer){
   const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
   let head=[['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo))];
   let body=[], cellMeta={};
-  people.forEach((p,ri)=>{ let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.'];
-    wd.forEach((c,ci)=>{ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show=isR?'R':(code==='L'?'L':''); row.push(show); cellMeta[ri+'_'+(ci+1)]=show; }); body.push(row); });
+  people.forEach((p,ri)=>{ let row=[p.q+' '+nomeBreve(p)];
+    wd.forEach((c,ci)=>{ const code=cellCode(p.id,c.day), isR=(effPos(p)===c.salto); const show=(code==='RS')?'RS':(isR?'R':(code==='L'?'L':'')); row.push(show); cellMeta[ri+'_'+(ci+1)]=show; }); body.push(row); });
   doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
     styles:{font:'helvetica',fontSize:8,halign:'center',valign:'middle',cellPadding:1,lineColor:[154,160,168],lineWidth:0.2,textColor:[16,21,30]},
     headStyles:{fillColor:[239,240,236],textColor:[16,21,30],fontStyle:'bold',halign:'center',fontSize:7.5},
     columnStyles:{0:{halign:'left',cellWidth:46,fontSize:8.5}},
-    didParseCell:function(d){ if(d.section==='body' && d.column.index>0){ const v=cellMeta[d.row.index+'_'+d.column.index]; if(v==='R'){ d.cell.styles.fillColor=[237,239,234]; } else if(v==='L'){ d.cell.styles.fillColor=[227,236,247]; d.cell.styles.textColor=[31,92,153]; } d.cell.styles.fontStyle='bold'; } } });
+    didParseCell:function(d){ if(d.section==='body' && d.column.index>0){ const v=cellMeta[d.row.index+'_'+d.column.index];
+      if(v==='R'){ d.cell.styles.fillColor=[237,239,234]; }
+      else if(v==='L'){ d.cell.styles.fillColor=[227,236,247]; d.cell.styles.textColor=[31,92,153]; }
+      else if(v==='RS'){ d.cell.styles.fillColor=[250,241,214]; d.cell.styles.textColor=[135,98,0]; }
+      d.cell.styles.fontStyle='bold'; } } });
   let y=doc.lastAutoTable.finalY+7;
   doc.setFontSize(8); doc.setTextColor(91,99,110); doc.setFont('helvetica','normal');
-  doc.text('L = ferie     R = salto turno     G = diurno 08-20     N = notturno 20-08',16,y); y+=6;
+  doc.text('L = ferie     R = salto turno     RS = rientro in straordinario     G = diurno 08-20     N = notturno 20-08',16,y); y+=6;
   doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.setTextColor(16,21,30); doc.text('FERIE RICHIESTE PER IL MESE',16,y); y+=5;
   let fl=[]; people.forEach(p=>{ const ld=wd.filter(c=>cellCode(p.id,c.day)==='L').map(c=>c.day); if(ld.length) fl.push((p.cognome||'')+' '+(p.nome||'')+': '+ld.join('-')+' '+MESI[S.month-1]); });
-  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.text(fl.length?fl.join('     '):'Nessuna richiesta.',16,y); y+=5;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5);
+  const lines=doc.splitTextToSize(fl.length?fl.join('     '):'Nessuna richiesta.',W-32); doc.text(lines,16,y); y+=5*lines.length;
   doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text('Malattie, missioni e sostituzioni non sono riportate: vengono registrate durante il mese.',16,y);
-  pdfSign(doc,'Siracusa, '+MESI[S.month-1]+' '+S.year,W,y+12,signer);
+  pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+12,signer);
   doc.save('prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
 }
 
@@ -652,54 +883,40 @@ function pdfBuoni(signer){
   const {jsPDF}=window.jspdf; const doc=new jsPDF('l','mm','a4'); const W=297;
   pdfHeader(doc,'BUONI PASTO - TURNO '+S.turno, SEDE+'  -  '+MESI[S.month-1]+' '+S.year+'  -  riepilogo mensile delle presenze',W);
   const wd=workingDays(engTurno(),S.year,S.month), people=personArr();
-  const last=wd.length; // indice colonna "Buoni"
+  const last=wd.length;
   let head=[['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo)).concat(['Buoni'])];
   let body=[], meta={}, totTurno=0;
-  people.forEach(function(p){ const ri=body.length;
-    let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.']; let tot=0;
-    wd.forEach(function(c,ci){ const code=cellCode(p.id,c.day); const isRday=(effPos(p)===c.salto); let show,val;
-      if(code==='RS'){ show='RS'; val=1; }
-      else if(isRday){ show='R'; val=0; }
-      else if(code==='SD'){ show='SD'; val=2; }
-      else if(code==='SN'){ show='SN'; val=1; }
-      else if(ABSENCE.indexOf(code)>=0){ show=code; val=0; }
-      else { show=''; val=1; }
-      tot+=val; meta[ri+'_'+(ci+1)]=show; row.push(show);
-    });
-    row.push(String(tot)); totTurno+=tot; body.push(row);
-  });
+  people.forEach(function(p){ const ri=body.length; let row=[p.q+' '+nomeBreve(p)]; let tot=0;
+    wd.forEach(function(c,ci){ const b=buonoCella(p,c); tot+=b.val; meta[ri+'_'+(ci+1)]=b.show; row.push(b.show); });
+    row.push(String(tot)); totTurno+=tot; body.push(row); });
   const nPers=body.length;
   esterniRows().forEach(function(x){ const ri=body.length; const bt=esternoBuoni(x.days);
-    let row=['EXT '+x.q+' '+(x.cognome||'')+' '+(x.nome||'').charAt(0)+'.'];
+    let row=['EXT '+x.q+' '+nomeBreve(x)];
     wd.forEach(function(c,ci){ const mot=x.days[c.day]; const show=mot?(mot==='Straordinario'?'ST':'SO'):''; meta[ri+'_'+(ci+1)]=show; row.push(show); });
-    row.push(String(bt)); totTurno+=bt; body.push(row);
-  });
+    row.push(String(bt)); totTurno+=bt; body.push(row); });
+  const cs={0:{halign:'left',cellWidth:44,fontSize:8}}; cs[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};
   doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
     styles:{font:'helvetica',fontSize:7.5,halign:'center',valign:'middle',cellPadding:0.8,lineColor:[154,160,168],lineWidth:0.2,textColor:[16,21,30]},
     headStyles:{fillColor:[239,240,236],textColor:[16,21,30],fontStyle:'bold',halign:'center',fontSize:7},
-    columnStyles:Object.assign({0:{halign:'left',cellWidth:44,fontSize:8}},(function(){var o={};o[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};return o;})()),
+    columnStyles:cs,
     didParseCell:function(d){
       if(d.section==='body' && d.column.index===0 && d.row.index>=nPers){ d.cell.styles.fillColor=[255,251,242]; d.cell.styles.textColor=[120,98,0]; }
       if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index];
         if(v==='R'||v==='SO'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];}
         else if(v==='SD'||v==='ST'||v==='RS'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];}
         else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];}
-        else if(v&&v!==''){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];}
+        else if(v && isAbsent(v)){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];}
         d.cell.styles.fontStyle='bold'; } } });
   let y=doc.lastAutoTable.finalY+6;
-  const grand=totTurno;
+  if(y+30>doc.internal.pageSize.getHeight()){ doc.addPage(); y=20; }
   doc.setFillColor(252,235,238); doc.rect(14,y,W-28,9,'F'); doc.setDrawColor(154,160,168); doc.setLineWidth(0.3); doc.rect(14,y,W-28,9,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
-  doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(grand),W-20,y+6.5,{align:'right'}); y+=14;
+  doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(totTurno),W-20,y+6.5,{align:'right'}); y+=14;
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
-  doc.text('Personale: vuoto = presente (1)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario (1)   SO = sostituzione (0).',16,y);
-  pdfSign(doc,'Siracusa, '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
+  doc.text('Personale: vuoto = presente (1)   RS = rientro straordinario (1)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario (1)   SO = sostituzione (0).',16,y);
+  pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
   doc.save('buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
 }
-
-/* attach extra month listeners for mezziOp */
-const _attach=attach;
-attach=function(){ _attach(); const r=db.ref(refMese()+'/mezziOp'); r.on('value',s=>{S.mezziOp=s.val()||{}; if(S.tab===1) render();}); scopeRefs.push(r); };
 
 window.addEventListener('load',startApp);
 </script>
