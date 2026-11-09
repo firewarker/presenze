@@ -70,6 +70,12 @@ Sono queste regole a impedire davvero che un turno legga i dati di un altro (il 
 - **Firma sui PDF:** quando generi un documento, l'app chiede quale **Capo Squadra** (CS/CSE/CR) lo sta firmando e ne riporta il nominativo sotto "Il Capo Turno".
 - **Turno PROVA (solo admin):** nel menù turni trovi anche `PROVA (test)`. È una sandbox isolata — usa lo stesso turnario reale ma dati separati — quindi puoi fare tutte le prove che vuoi **senza toccare A/B/C/D**. I test sui turni veri, invece, **sì** che si riflettono sulle schermate di quel turno.
 - **Cambio password:** ogni utente (turni e admin) può cambiarla da **Impostazioni → Account → Cambia password** (chiede la password attuale per sicurezza).
+- **Dove si salvano i PDF:** su computer con **Chrome o Edge** si apre la finestra *Salva con nome*, dove scegli la cartella. Sul **telefono** si apre il menù *Condividi* (Salva su File, WhatsApp, Mail…). Su **Firefox/Safari da computer** il file va nei Download: per scegliere la cartella attiva nel browser l'opzione *"Chiedi sempre dove salvare i file"*.
+- **Backup:** in **Impostazioni → Backup → Esegui backup** salvi un file `.json` con tutto (personale, codici, mezzi, tutti i mesi di tutti gli anni). L'admin salva tutti i turni, un turno salva solo il proprio. Consiglio: uno al mese, conservato in due posti (PC + chiavetta o cloud).
+- **Ripristinare un backup (solo in emergenza):** Console Firebase → **Realtime Database** → Dati.
+  - Backup dell'admin (*tutti-i-turni*): seleziona il nodo **`turni`** → menù ⋮ → **Importa JSON** → scegli il file.
+  - Backup di un turno (*turnoD*…): apri `turni` → seleziona il nodo del turno (es. **`D`**) → ⋮ → **Importa JSON**.
+  - Attenzione: l'importazione **sostituisce** quello che c'è in quel nodo con il contenuto del file.
 - **Salto turno:** sopra i giorni del Prospetto mensile (e nei PDF ferie e buoni) c'è la riga **Salto turno**: una casella per ogni coppia diurno+notturno con il salto di quei due giorni (es. *Salto D2*). È calcolata dal turnario, per tutti i turni e tutti gli anni.
 - **Tema:** di giorno è color carta, chiaro e riposante; di notte diventa scuro da solo se il telefono/PC è in modalità scura. Il pulsante tondo accanto a "Esci" cambia tra *automatico → chiaro → scuro*, e ognuno se lo ritrova come l'ha lasciato.
 - **Installarla sul telefono:** apri il sito, poi dal menù del browser scegli **"Aggiungi a schermata Home"** (Safari: tasto Condividi). Compare l'icona VVF e si apre a tutto schermo come un'app.

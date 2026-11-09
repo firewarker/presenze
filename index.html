@@ -149,6 +149,8 @@
   .theme-btn{background:none;border:1px solid #34466A;color:var(--onDark2);border-radius:6px;padding:0.22rem 0.4rem;cursor:pointer;display:inline-flex;align-items:center;}
   .theme-btn:hover{color:#fff;border-color:#fff;} .theme-btn svg{width:15px;height:15px;}
   .spin{text-align:center;color:var(--ink2);padding:2rem;font-size:0.85rem;}
+  .toast{position:fixed;left:50%;bottom:1.2rem;transform:translateX(-50%);background:#15243A;color:#fff;border-left:3px solid #2C8B4B;border-radius:8px;padding:0.65rem 1rem;font-size:0.82rem;box-shadow:0 8px 24px rgba(0,0,0,0.35);z-index:60;max-width:92vw;}
+  .toast.err{border-left-color:#C8102E;}
   @media (max-width:560px){
     .nav button{padding:0.5rem 0.1rem 0.45rem;gap:0.25rem;}
     .nav .nl{font-size:0.5rem;letter-spacing:0.02em;}
@@ -761,6 +763,8 @@ function scSetup(){
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezzi+'<button class="btn btn-out btn-full" onclick="mezzoModal(null)" style="margin-top:0.3rem">+ Aggiungi mezzo</button>'
     +'<div class="sec-h"><span class="eyebrow">Codici</span></div>'+codes+'<button class="btn btn-out btn-full" onclick="codeModal()" style="margin-top:0.3rem">+ Aggiungi codice</button>'
     +'<div class="sec-h"><span class="eyebrow">Account</span></div><div class="row"><div><div class="rn">'+esc(S.email)+'</div><div class="rs">'+(S.isAdmin?'Amministratore (tutti i turni)':'Turno '+esc(S.turno))+'</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
+    +'<div class="sec-h"><span class="eyebrow">Backup</span></div>'
+    +'<div class="row"><div><div class="rn">'+(S.isAdmin?'Tutti i turni (A, B, C, D, prova)':'Turno '+esc(S.turno))+'</div><div class="rs">Salva in un file tutto: personale, codici, mezzi e tutti i mesi di tutti gli anni.</div></div><button class="btn btn-fire btn-xs" onclick="doBackup()">Esegui backup</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Fissa</span></div>';
 }
 function personModal(id){
@@ -842,6 +846,68 @@ function openModal(html){ document.getElementById('modalBody').innerHTML=html; d
 function closeModal(){ document.getElementById('overlay').classList.add('hide'); }
 document.getElementById('overlay').addEventListener('click',function(e){ if(e.target===this) closeModal(); });
 
+/* ======================= SALVATAGGIO FILE ======================= */
+// Computer (Chrome/Edge): finestra "Salva con nome" con scelta della cartella.
+// Telefono: menu Condividi (Salva su File, WhatsApp, Mail...). Altri browser: download normale.
+function isMobile(){ try{ return (navigator.maxTouchPoints>0) && window.matchMedia('(pointer:coarse)').matches; }catch(e){ return false; } }
+function toast(msg,err){
+  const t=document.createElement('div'); t.className='toast'+(err?' err':''); t.textContent=msg; document.body.appendChild(t);
+  setTimeout(()=>{ t.remove(); },4000);
+}
+function downloadBlob(blob,name){
+  const url=URL.createObjectURL(blob), a=document.createElement('a');
+  a.href=url; a.download=name; document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(()=>URL.revokeObjectURL(url),60000);
+}
+async function shareOrDownload(blob,name,mime){
+  try{
+    const f=new File([blob],name,{type:mime});
+    if(isMobile() && navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:name}); return; }
+  }catch(e){
+    if(e && e.name==='AbortError') return; // annullato dall'utente
+    if(e && e.name==='NotAllowedError'){ // il browser vuole un nuovo tocco: offro un pulsante
+      window._pendingFile={blob,name,mime};
+      openModal('<h3>File pronto</h3><div class="ms">'+esc(name)+'</div><button class="btn btn-fire btn-full" onclick="closeModal();shareOrDownload(window._pendingFile.blob,window._pendingFile.name,window._pendingFile.mime)">Salva / condividi</button>');
+      return;
+    }
+  }
+  downloadBlob(blob,name);
+}
+// getBlob puo' essere asincrono (backup): la finestra si apre SUBITO al tocco, i dati si preparano dopo
+async function saveOut(name,mime,ext,desc,getBlob){
+  if(window.showSaveFilePicker && !isMobile()){
+    let h=null;
+    try{ const acc={}; acc[mime]=[ext]; h=await window.showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:acc}]}); }
+    catch(e){ if(e && e.name==='AbortError') return false; h=null; }
+    if(h){
+      try{ const blob=await getBlob(); const w=await h.createWritable(); await w.write(blob); await w.close(); toast('Salvato: '+h.name); return true; }
+      catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
+    }
+  }
+  try{ const blob=await getBlob(); await shareOrDownload(blob,name,mime); return true; }
+  catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
+}
+function savePdf(doc,name){ return saveOut(name,'application/pdf','.pdf','Documento PDF',()=>doc.output('blob')); }
+
+/* ======================= BACKUP ======================= */
+// File JSON con gli stessi dati del database: in caso di emergenza si ricarica dalla console Firebase
+// (Realtime Database -> nodo indicato -> Importa JSON). Admin: tutti i turni (nodo /turni). Turno: solo il proprio (nodo /turni/X).
+function doBackup(){
+  const d=new Date(), stamp=d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')+'_'+String(d.getHours()).padStart(2,'0')+String(d.getMinutes()).padStart(2,'0');
+  const name='backup_presenze_'+(S.isAdmin?'tutti-i-turni':'turno'+S.turno)+'_'+stamp+'.json';
+  return saveOut(name,'application/json','.json','Backup presenze (JSON)',async function(){
+    let data;
+    if(S.isAdmin){
+      const T=['A','B','C','D','PROVA'];
+      const snaps=await Promise.all(T.map(t=>db.ref('turni/'+t).once('value')));
+      data={}; T.forEach((t,i)=>{ const v=snaps[i].val(); if(v!=null) data[t]=v; });
+    } else {
+      data=(await db.ref('turni/'+S.turno).once('value')).val()||{};
+    }
+    return new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  });
+}
+
 /* ======================= PDF ======================= */
 function pdfHeader(doc,title,subtitle,W){
   doc.setFont('helvetica','normal'); doc.setFontSize(7); doc.setTextColor(91,99,110);
@@ -909,7 +975,7 @@ function pdfPresenze(day,signer){
     doc.autoTable({ startY:y, head:[['Automezzo','Operatività','Note']], body:mb, theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,lineColor:[154,160,168],lineWidth:0.2}, headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'}, alternateRowStyles:{fillColor:[246,247,244]}, columnStyles:{0:{cellWidth:80},1:{halign:'center',cellWidth:30,fontStyle:'bold'}} });
     y=doc.lastAutoTable.finalY; }
   pdfSign(doc,LUOGO+', '+day+' '+MESI[S.month-1]+' '+S.year,W,y+14,signer);
-  doc.save('presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf');
+  savePdf(doc,'presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf');
 }
 
 function pdfFerie(signer){
@@ -941,7 +1007,7 @@ function pdfFerie(signer){
   const lines=doc.splitTextToSize(fl.length?fl.join('     '):'Nessuna richiesta.',W-32); doc.text(lines,16,y); y+=5*lines.length;
   doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text('Malattie, missioni e sostituzioni non sono riportate: vengono registrate durante il mese.',16,y);
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+12,signer);
-  doc.save('prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+  savePdf(doc,'prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
 }
 
 function pdfBuoni(signer){
@@ -983,7 +1049,7 @@ function pdfBuoni(signer){
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
   doc.text('Personale: vuoto = presente (1)   RS = rientro straordinario (1)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario (1)   SO = sostituzione (0).',16,y);
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
-  doc.save('buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+  savePdf(doc,'buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
 }
 
 window.addEventListener('load',startApp);
