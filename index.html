@@ -62,9 +62,9 @@
   .sec-h:first-child{margin-top:0;}
   .grid-wrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;}
   table.grid{border-collapse:collapse;min-width:max-content;width:100%;}
-  .grid th,.grid td{border-bottom:1px solid #F0F1ED;padding:0;}
+  .grid th,.grid td{border-bottom:1px solid #DCDFD8;padding:0;}
   .grid thead th{background:var(--paper2);border-bottom:2px solid var(--line);padding:0.45rem 0.35rem;vertical-align:top;}
-  .grid th.name,.grid td.name{position:sticky;left:0;background:var(--paper);text-align:left;min-width:140px;z-index:2;border-right:1px solid var(--line);padding:0.4rem 0.5rem;}
+  .grid th.name,.grid td.name{position:sticky;left:0;background:var(--paper);text-align:left;min-width:140px;z-index:2;border-right:1px solid var(--line);padding:0.6rem 0.55rem;}
   .grid thead th.name{background:var(--paper2);z-index:3;}
   .daynum{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.02rem;color:var(--ink);line-height:1;}
   .dayw{font-size:0.58rem;color:var(--ink2);text-transform:uppercase;letter-spacing:0.04em;margin:0.1rem 0 0.25rem;}
@@ -72,11 +72,14 @@
   .gn-g{background:var(--amber);} .gn-n{background:var(--steel);}
   .pname{font-weight:600;font-size:0.9rem;line-height:1.05;}
   .pq{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.05em;font-size:0.58rem;font-weight:600;color:#fff;background:#9098A3;border-radius:3px;padding:0.03rem 0.28rem;margin-bottom:0.15rem;display:inline-block;}
-  td.daycell{padding:0.16rem 0.2rem;text-align:center;}
+  td.daycell{padding:0.48rem 0.24rem;text-align:center;border-left:1px solid #EFF0EC;}
   .cell{width:34px;height:30px;border:none;background:none;cursor:pointer;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.74rem;display:flex;align-items:center;justify-content:center;margin:0 auto;}
   .chipc{width:30px;height:23px;border-radius:5px;display:flex;align-items:center;justify-content:center;}
   .empty{color:#D2D5CE;} .empty:hover{background:#F4F5F1;border-radius:5px;}
   .rcell{background:#EDEFEA;border:1px dashed #C2C6BD;color:#737A70;border-radius:5px;width:30px;height:23px;}
+  .grid tbody tr:nth-child(even) td{background:#FAFBF8;}
+  .grid tbody tr:nth-child(even) td.name{background:#FAFBF8;}
+  .daycell .chipc,.daycell .rcell{width:32px;height:26px;}
   .legend{display:flex;gap:0.5rem 0.85rem;flex-wrap:wrap;margin-top:0.7rem;font-size:0.68rem;color:var(--ink2);}
   .legend b{display:inline-block;width:11px;height:11px;border-radius:3px;vertical-align:middle;margin-right:0.25rem;}
   .cap{font-size:0.66rem;color:#9AA0A8;text-align:center;margin-top:0.5rem;}
@@ -221,7 +224,7 @@ function engTurno(){ return S.turno==='PROVA' ? 'D' : S.turno; }
 
 /* ======================= STATO ======================= */
 let auth, db, scopeRefs=[];
-const S={ turno:null, isAdmin:false, email:'', year:2026, month:1, tab:0,
+const S={ turno:null, isAdmin:false, email:'', year:(new Date().getFullYear()), month:(new Date().getMonth()+1), tab:0,
           personale:{}, codici:{}, cells:{}, note:{}, esterni:{}, mezzi:{}, saltoOv:{} };
 
 function codeColor(c){ const cc=S.codici[c]||DEFAULT_CODICI[c]; return cc?[cc[1],cc[2]]:['#EDEFEA','#6B7280']; }
@@ -331,7 +334,7 @@ function render(){
 function go(i){ S.tab=i; render(); }
 
 function periodControls(extra){
-  let years=''; for(let y=2024;y<=2030;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
+  let years=''; const yMax=(new Date().getFullYear())+40; for(let y=2024;y<=yMax;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
   let months=MESI.map((mm,i)=>'<option value="'+(i+1)+'"'+((i+1)===S.month?' selected':'')+'>'+mm.charAt(0).toUpperCase()+mm.slice(1)+'</option>').join('');
   let turnoSel='';
   if(S.isAdmin){ turnoSel='<div class="field"><label class="eyebrow">Turno</label><select onchange="S.turno=this.value;changePeriod()">'+['A','B','C','D','PROVA'].map(t=>'<option value="'+t+'"'+(t===S.turno?' selected':'')+'>'+(t==='PROVA'?'PROVA (test)':t)+'</option>').join('')+'</select></div>'; }
@@ -351,13 +354,13 @@ function scProspetto(){
   people.forEach(p=>{
     let row='<tr><td class="name"><span class="pq">'+p.q+'</span><div class="pname">'+(p.cognome||'')+' '+(p.nome||'').charAt(0)+(p.nome?'.':'')+'</div></td>';
     wd.forEach(c=>{
-      const isR=(effPos(p)===c.salto);
+      const code=cellCode(p.id,c.day);
+      const isRday=(effPos(p)===c.salto);
       let inner;
-      if(isR) inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+',true)"><span class="rcell">R</span></button>';
-      else { const code=cellCode(p.id,c.day);
-        if(!code) inner='<button class="cell empty" onclick="cellModal(\''+p.id+'\','+c.day+',false)">\u00b7</button>';
-        else { const col=codeColor(code); inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+',false)"><span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+code+'</span></button>'; }
-      }
+      if(code==='RS') inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="chipc" style="background:#FAF1D6;color:#876200;border:1px solid #E7C879">RS</span></button>';
+      else if(isRday) inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="rcell">R</span></button>';
+      else if(!code) inner='<button class="cell empty" onclick="cellModal(\''+p.id+'\','+c.day+')">\u00b7</button>';
+      else { const col=codeColor(code); inner='<button class="cell" onclick="cellModal(\''+p.id+'\','+c.day+')"><span class="chipc" style="background:'+col[0]+';color:'+col[1]+'">'+code+'</span></button>'; }
       row+='<td class="daycell">'+inner+'</td>';
     });
     body+=row+'</tr>';
@@ -373,29 +376,41 @@ function scProspetto(){
   });
   return periodControls()
     +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+extBody+'</tbody></table></div>'
-    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto (auto) \u00b7 EXT = personale esterno (ST straordinario, SO sostituzione) \u2014 si gestiscono in Presenze</div>'
+    +'<div class="cap">Vuoto = da compilare \u00b7 R = salto (auto) \u00b7 RS = rientro straordinario (tocca un R) \u00b7 EXT = esterno (ST/SO, da Presenze)</div>'
     +legendHtml()
     +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Esporta prospetto / richiesta ferie (PDF)</button>';
 }
-function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="background:'+c[k][1]+'"></b>'+k+' '+c[k][0].toLowerCase()+'</span>'; }); s+='<span><b style="background:#EDEFEA;border:1px dashed #C2C6BD"></b>R recupero (auto)</span></div>'; return s; }
+function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="background:'+c[k][1]+'"></b>'+k+' '+c[k][0].toLowerCase()+'</span>'; }); s+='<span><b style="background:#EDEFEA;border:1px dashed #C2C6BD"></b>R recupero (auto)</span><span><b style="background:#FAF1D6;border:1px solid #E7C879"></b>RS rientro straordinario</span></div>'; return s; }
 
-function cellModal(pid,day,isR){
-  const p=S.personale[pid], du=dutyFor(engTurno(),S.year,S.month,day), cur=cellCode(pid,day);
-  const c=allCodici();
-  let grid='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'\')"><span class="cc">\u2014</span>Vuota</button>';
-  grid+='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'P\')"><span class="cc">P</span>Presente</button>';
-  Object.keys(c).forEach(k=>{ const b=(k===cur)?'border-color:#C8102E;background:#FCEBEE;':''; grid+='<button class="codebtn" style="'+b+'" onclick="setCell(\''+pid+'\','+day+',\''+k+'\')"><span class="cc">'+k+'</span>'+c[k][0]+'</button>'; });
-  let salto='<div class="salto-row"><span class="eyebrow">Salto turno</span>'
+function cellModal(pid,day){
+  const p=Object.assign({id:pid},S.personale[pid]||{});
+  const du=dutyFor(engTurno(),S.year,S.month,day), cur=cellCode(pid,day);
+  const isRday=(effPos(p)===du.salto), isRS=(cur==='RS');
+  const dLabel=(p.cognome||'')+' '+(p.nome||'')+' \u00b7 '+day+' '+MESI[S.month-1]+' \u00b7 '+(du.tipo==='G'?'diurno 08-20':du.tipo==='N'?'notturno 20-08':'riposo');
+  const salto='<div class="salto-row"><span class="eyebrow">Salto turno</span>'
     +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'mese\')">Solo questo mese</button>'
     +'<button class="btn btn-out btn-xs" onclick="applySalto(\''+pid+'\',\'sempre\')">In generale</button></div>';
-  openModal('<h3>'+(isR?'Salto turno':'Imposta codice')+'</h3><div class="ms">'+(p.cognome||'')+' '+(p.nome||'')+' \u00b7 '+day+' '+MESI[S.month-1]+' \u00b7 '+(du.tipo==='G'?'diurno 08-20':'notturno 20-08')+'</div>'
-    +(isR?'<div class="note" style="margin:0 0 0.8rem">Questa giornata \u00e8 un salto turno calcolato automaticamente. Per modificarlo usa i pulsanti qui sotto.</div>':'<div class="codegrid">'+grid+'</div>')
-    +salto);
+  if(isRday || isRS){
+    const rientroBtn = isRS
+      ? '<button class="btn btn-out btn-full" onclick="setCell(\''+pid+'\','+day+',\'\')">Annulla rientro (torna a salto)</button>'
+      : '<button class="btn btn-full" style="background:#E0A314;color:#3d2d00" onclick="setCell(\''+pid+'\','+day+',\'RS\')">Rientro in straordinario</button>';
+    openModal('<h3>'+(isRS?'Rientro in straordinario':'Salto turno')+'</h3><div class="ms">'+dLabel+'</div>'
+      +'<div class="note" style="margin:0 0 0.8rem">'+(isRS?'Questa persona \u00e8 rientrata in straordinario: risulta <b>presente</b> nel foglio presenze e prende il buono pasto. Puoi annullare qui sotto.':'Giornata di salto turno (calcolata). Puoi registrare un <b>rientro in straordinario</b> oppure spostare il salto.')+'</div>'
+      +rientroBtn+salto);
+  } else {
+    const c=allCodici();
+    let grid='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'\')"><span class="cc">\u2014</span>Vuota</button>';
+    grid+='<button class="codebtn" onclick="setCell(\''+pid+'\','+day+',\'P\')"><span class="cc">P</span>Presente</button>';
+    Object.keys(c).forEach(k=>{ const b=(k===cur)?'border-color:#C8102E;background:#FCEBEE;':''; grid+='<button class="codebtn" style="'+b+'" onclick="setCell(\''+pid+'\','+day+',\''+k+'\')"><span class="cc">'+k+'</span>'+c[k][0]+'</button>'; });
+    openModal('<h3>Imposta codice</h3><div class="ms">'+dLabel+'</div><div class="codegrid">'+grid+'</div>'+salto);
+  }
 }
 
 function dayRoster(day){ // per la scheda presenze
   const du=dutyFor(engTurno(),S.year,S.month,day);
-  return personArr().map(p=>{ const isR=(effPos(p)===du.salto); const code=isR?'R':cellCode(p.id,day); return {p,isR,code,du}; });
+  return personArr().map(p=>{ const stored=cellCode(p.id,day); const isRday=(effPos(p)===du.salto);
+    let isR,code; if(stored==='RS'){ isR=false; code='RS'; } else if(isRday){ isR=true; code='R'; } else { isR=false; code=stored; }
+    return {p,isR,code,du}; });
 }
 function scPresenze(){
   const wd=workingDays(engTurno(),S.year,S.month);
@@ -410,6 +425,7 @@ function scPresenze(){
     const note=(S.note[S.curDay]&&S.note[S.curDay][r.p.id])||'';
     let cls,tag;
     if(r.isR){ rec++; cls='rec'; tag='<span class="tag" style="background:#EDEFEA;color:#737A70">Recupero</span>'; }
+    else if(r.code==='RS'){ pres++; cls='ok'; tag='<span class="tag" style="background:#FAF1D6;color:#876200">Rientro straord.</span>'; }
     else if(r.code && ABSENCE.indexOf(r.code)>=0){ ass++; const col=codeColor(r.code); cls='ko'; tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">Assente \u00b7 '+r.code+'</span>'; }
     else { pres++; cls='ok'; tag='<span class="tag" style="background:#E3F1E4;color:#1E6B39">Presente</span>'; }
     return '<div class="row '+cls+'"><div><div class="rn">'+r.p.q+' \u00b7 '+(r.p.cognome||'')+' '+(r.p.nome||'')+'</div>'
@@ -477,7 +493,9 @@ function ensureYearSubs(){ // conteggio SD/SN dell'intero anno (lettura una-tant
 function refreshYearSubs(){ S._subsKey=null; ensureYearSubs(); }
 function buoniPerson(p){ // presenze (vuoto/P) escluse R e assenze + 2*SD + SN
   const wd=workingDays(engTurno(),S.year,S.month); let pres=0,sd=0,sn=0;
-  wd.forEach(c=>{ if(effPos(p)===c.salto) return; const code=cellCode(p.id,c.day); if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
+  wd.forEach(c=>{ const code=cellCode(p.id,c.day); const isRday=(effPos(p)===c.salto);
+    if(code==='RS'){ pres++; return; } if(isRday) return;
+    if(code==='SD'){sd++;} else if(code==='SN'){sn++;} else if(ABSENCE.indexOf(code)>=0){} else {pres++;} });
   return {pres,sd,sn,tot:pres+2*sd+sn};
 }
 function scBuoni(){
@@ -582,8 +600,11 @@ function pdfPresenze(day,signer){
   const du=dutyFor(engTurno(),S.year,S.month,day), dd=new Date(S.year,S.month-1,day);
   pdfHeader(doc,'PROSPETTO PRESENZE - TURNO '+S.turno, SEDE+'  -  '+WDL[dd.getDay()]+' '+day+' '+MESI[S.month-1]+' '+S.year+'  -  servizio '+(du.tipo==='G'?'diurno 08:00 / 20:00':'notturno 20:00 / 08:00'),W);
   const ros=dayRoster(day); let body=[],pres=0,ass=0,rec=0;
-  ros.forEach(r=>{ const note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
-    if(r.isR){ p_=' '; a_='RECUPERO'; rec++; } else if(ABSENCE.indexOf(r.code)>=0){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; } else { p_='SI'; a_=''; pres++; }
+  ros.forEach(r=>{ let note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
+    if(r.isR){ p_=' '; a_='RECUPERO'; rec++; }
+    else if(r.code==='RS'){ p_='SI'; a_=''; pres++; if(!note) note='rientro straordinario'; }
+    else if(ABSENCE.indexOf(r.code)>=0){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; }
+    else { p_='SI'; a_=''; pres++; }
     body.push([r.p.q,(r.p.cognome||'')+' '+(r.p.nome||''),p_,a_,note]); });
   Object.keys(S.esterni[day]||{}).forEach(eid=>{ const e=S.esterni[day][eid]; pres++; body.push([e.q,e.cognome+' '+e.nome+' ('+(e.prov||'')+')','SI',e.motivo.toUpperCase(),'esterno']); });
   doc.autoTable({ startY:38, head:[['Qualifica','Nominativo','Presente','Assente per causa','Note']], body:body,
@@ -636,8 +657,9 @@ function pdfBuoni(signer){
   let body=[], meta={}, totTurno=0;
   people.forEach(function(p){ const ri=body.length;
     let row=[p.q+' '+(p.cognome||'')+' '+(p.nome||'').charAt(0)+'.']; let tot=0;
-    wd.forEach(function(c,ci){ const isR=(effPos(p)===c.salto); const code=cellCode(p.id,c.day); let show,val;
-      if(isR){ show='R'; val=0; }
+    wd.forEach(function(c,ci){ const code=cellCode(p.id,c.day); const isRday=(effPos(p)===c.salto); let show,val;
+      if(code==='RS'){ show='RS'; val=1; }
+      else if(isRday){ show='R'; val=0; }
       else if(code==='SD'){ show='SD'; val=2; }
       else if(code==='SN'){ show='SN'; val=1; }
       else if(ABSENCE.indexOf(code)>=0){ show=code; val=0; }
@@ -660,7 +682,7 @@ function pdfBuoni(signer){
       if(d.section==='body' && d.column.index===0 && d.row.index>=nPers){ d.cell.styles.fillColor=[255,251,242]; d.cell.styles.textColor=[120,98,0]; }
       if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index];
         if(v==='R'||v==='SO'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];}
-        else if(v==='SD'||v==='ST'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];}
+        else if(v==='SD'||v==='ST'||v==='RS'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];}
         else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];}
         else if(v&&v!==''){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];}
         d.cell.styles.fontStyle='bold'; } } });
