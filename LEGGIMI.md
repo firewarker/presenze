@@ -70,6 +70,13 @@ Le regole lasciano entrare solo l'account del distaccamento (turni A, B, C, D) e
 - **Turno PROVA (solo admin):** nel menù turni trovi anche `PROVA (test)`. È una sandbox isolata — usa lo stesso turnario reale ma dati separati — quindi puoi fare tutte le prove che vuoi **senza toccare A/B/C/D**. I test sui turni veri, invece, **sì** che si riflettono sulle schermate di quel turno.
 - **Cambio password admin:** da amministratore, **Impostazioni → Accesso → Cambia password**. Per i turni non c'è: il codice del distaccamento si cambia solo dalla Console (passo 3).
 - **Dove si salvano i PDF:** su computer con **Chrome o Edge** si apre la finestra *Salva con nome*, dove scegli la cartella. Sul **telefono** si apre il menù *Condividi* (Salva su File, WhatsApp, Mail…). Su **Firefox/Safari da computer** il file va nei Download: per scegliere la cartella attiva nel browser l'opzione *"Chiedi sempre dove salvare i file"*.
+- **Buoni pasto:**
+  - **Personale del turno:** presente 1 · **rientro in straordinario (RS) 2 di giorno, 1 di notte** · sostituzione diurna (SD) 2 · notturna (SN) 1.
+  - **Esterni in straordinario:** di giorno si sceglie **1 o 2 buoni** (parte da 2), di notte sempre 1.
+  - **Esterni in sostituzione:** si sceglie **0, 1 o 2 buoni** di giorno, **0 o 1** di notte.
+  - In **Impostazioni → Buoni pasto — regola del turno** ogni turno decide da cosa parte la scelta (straordinario diurno 1 o 2; sostituzione con o senza buono). I giorni già inseriti non cambiano.
+  - Per correggere: in **Presenze giornaliere** tocca l'etichetta dell'esterno (*"Straordinario · 2 buoni"*) e scegli il numero giusto.
+  - Nel PDF dei buoni: **ST** = straordinario, **SO** = sostituzione; il **2** accanto (ST2, SO2) vuol dire 2 buoni; giallo con buono, grigio senza.
 - **Invia per email:** accanto a ogni "Genera PDF" c'è **Invia per email**. Il PDF si **salva sempre prima** (scegliendo la cartella), poi compare la finestra con **Apri l'email**: si apre il programma di posta con destinatario, oggetto e testo già scritti; si **trascina il PDF** nell'email e si preme Invia. Sul telefono il PDF viene allegato da solo dal menù Condividi.
   - Destinatari predefiniti: **presenze e ferie → fureria.siracusa@vigilfuoco.it**, **buoni pasto → informatica.siracusa@vigilfuoco.it**. Si cambiano in **Impostazioni → Invio per email** (anche più indirizzi, separati da virgola). Il turno PROVA non ha destinatari.
   - **Da fare una volta sul PC della caserma:**
