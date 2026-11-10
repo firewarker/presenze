@@ -47,6 +47,33 @@
   .login-card input{width:100%;padding:0.65rem 0.8rem;border:1px solid #2A3C5A;background:#0F1A2B;color:#fff;border-radius:8px;font-family:inherit;font-size:0.95rem;}
   .login-card input:focus{outline:none;border-color:var(--amber);}
   .login-err{color:#FF8A9B;font-size:0.78rem;margin-top:0.7rem;min-height:1rem;text-align:center;}
+  .login-hint{font-size:0.74rem;color:var(--onDark2);text-align:center;margin-top:0.9rem;line-height:1.45;}
+  .linkbtn{background:none;border:none;color:#C7D5E6;font-family:inherit;font-size:0.76rem;cursor:pointer;border-bottom:1px dashed #7F8FA6;padding:0;}
+  .linkbtn:hover{color:#fff;}
+  .adm-link{margin-top:1.1rem;padding-top:0.9rem;border-top:1px solid #24324A;text-align:center;font-size:0.74rem;color:#7F8FA6;}
+  .pick-top{display:flex;align-items:center;gap:0.6rem;}
+  .pick-top .badge-vvf{margin:0;width:42px;height:42px;font-size:0.66rem;}
+  .pick-top h1{text-align:left;font-size:1.4rem;line-height:1;}
+  .pick-top .ls{text-align:left;margin:0.15rem 0 0;}
+  .pick-stripe{height:3px;background:var(--fire);border-radius:2px;margin:0.9rem 0 1rem;}
+  .pick-q{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.1rem;color:#fff;}
+  .pick-today{font-size:0.76rem;color:var(--onDark2);margin:0.15rem 0 0.9rem;}
+  .pick-grid{display:grid;grid-template-columns:1fr 1fr;gap:0.7rem;}
+  .tbtn{background:var(--night2);border:1px solid #2B4268;border-radius:12px;padding:0.95rem 0.5rem 0.8rem;text-align:center;color:#fff;cursor:pointer;font-family:inherit;transition:0.12s;}
+  .tbtn:hover,.tbtn:focus{border-color:var(--amber);outline:none;}
+  .tbtn.last{border-color:var(--amber);box-shadow:0 0 0 1px var(--amber) inset;}
+  .tbtn .L{font-family:'Barlow Semi Condensed';font-weight:700;font-size:2.5rem;line-height:1;display:block;}
+  .tbtn .w{font-family:'Barlow Semi Condensed';text-transform:uppercase;letter-spacing:0.08em;font-size:0.62rem;color:var(--onDark2);display:block;margin-top:0.15rem;}
+  .tbtn .st{display:inline-block;margin-top:0.45rem;font-family:'Barlow Semi Condensed';font-weight:700;font-size:0.62rem;letter-spacing:0.04em;text-transform:uppercase;border-radius:4px;padding:0.08rem 0.4rem;}
+  .st.g{background:var(--amber);color:#2a1f00;} .st.n{background:var(--steel);color:#fff;} .st.r{background:#24324A;color:#7F8FA6;}
+  .pick-rem{display:flex;align-items:center;gap:0.5rem;font-size:0.8rem;color:#C7D5E6;margin-top:1rem;cursor:pointer;}
+  .pick-rem input{width:17px;height:17px;accent-color:var(--amber);}
+  .login-card label.pick-rem{text-transform:none;letter-spacing:0;font-family:'Barlow',sans-serif;font-size:0.82rem;font-weight:500;color:#C7D5E6;margin:1rem 0 0;}
+  .login-card .pick-rem input{width:17px;padding:0;}
+  .logout.amber{background:var(--amber);color:#2a1f00;border-color:var(--amber);font-weight:700;}
+  .logout.amber:hover{background:#F0B52A;color:#2a1f00;}
+  .tano{background:#3A2E10;border:1px solid #6B5420;color:#F2D58A;border-radius:8px;padding:0.6rem 0.8rem;font-size:0.86rem;text-align:center;margin-top:0.6rem;}
+  .tano b{color:#fff;}
   .cfg-warn{background:#3A2410;border:1px solid #7A4A12;color:#F2C58A;border-radius:8px;padding:0.7rem 0.85rem;font-size:0.74rem;margin-top:1rem;line-height:1.45;}
   /* APP shell */
   .app{max-width:920px;margin:0.6rem auto 2rem;padding:0 0.6rem;}
@@ -163,18 +190,31 @@
 
 <!-- ===================== LOGIN ===================== -->
 <div id="login">
-  <div class="login-card">
+  <!-- 1) codice del distaccamento: solo la prima volta su ogni dispositivo -->
+  <div class="login-card hide" id="cardCode">
     <div class="badge-vvf">VV<br>F</div>
     <h1>PRESENZE</h1>
     <div class="ls">Vigili del Fuoco &middot; Distaccamento di Lentini</div>
-    <label>Utente (email)</label>
-    <input id="liEmail" type="email" autocomplete="username" placeholder="turnod@vvflentini.it">
-    <label>Password</label>
-    <input id="liPass" type="password" autocomplete="current-password" placeholder="password" onkeydown="if(event.key==='Enter')doLogin()">
-    <div style="margin-top:1.1rem"><button class="btn btn-fire btn-full" onclick="doLogin()">Accedi</button></div>
+    <label for="liCode">Codice del distaccamento</label>
+    <input id="liCode" type="password" autocomplete="off" autocapitalize="off" autocorrect="off" spellcheck="false" placeholder="codice" onkeydown="if(event.key==='Enter')doCode()">
+    <div style="margin-top:1.1rem"><button class="btn btn-fire btn-full" id="liBtn" onclick="doCode()">Entra</button></div>
     <div class="login-err" id="liErr"></div>
+    <div class="tano hide" id="liTano">Suggerimento: <b>cosa diceva sempre Tano?</b></div>
+    <div class="login-hint">Il codice serve solo la prima volta su questo dispositivo.<br>Non lo ricordi? Chiedilo al tuo capo turno.</div>
+    <div class="adm-link">Gestione e prove: <button class="linkbtn" onclick="adminModal()">accesso amministratore</button></div>
     <div id="cfgWarn" class="cfg-warn hide"></div>
   </div>
+  <!-- 2) scelta del turno: ogni volta che si apre l'app -->
+  <div class="login-card hide" id="cardPick">
+    <div class="pick-top"><div class="badge-vvf">VV<br>F</div><div><h1>PRESENZE</h1><div class="ls">Distaccamento di Lentini</div></div></div>
+    <div class="pick-stripe"></div>
+    <div class="pick-q">Scegli il tuo turno</div>
+    <div class="pick-today" id="pickToday">&nbsp;</div>
+    <div class="pick-grid" id="pickGrid"></div>
+    <label class="pick-rem"><input type="checkbox" id="pickRemember"> Ricorda la scelta su questo dispositivo</label>
+    <div class="adm-link">Gestione e prove: <button class="linkbtn" onclick="adminModal()">accesso amministratore</button></div>
+  </div>
+  <div class="login-card" id="cardWait"><div class="spin" style="color:#92A3B7">Caricamento&hellip;</div></div>
 </div>
 
 <!-- ===================== APP ===================== -->
@@ -186,7 +226,7 @@
       <div class="h-right">
         <div class="h-status"><span class="dot wait" id="syncDot"></span> <span id="syncTxt">Connessione&hellip;</span></div>
         <button class="theme-btn" id="themeBtn" onclick="cycleTheme()" title="Tema"></button>
-        <button class="logout" onclick="doLogout()">Esci</button>
+        <button class="logout" id="hdrBtn" onclick="hdrAction()">Esci</button>
       </div>
     </div>
     <div class="firestripe"></div>
@@ -210,8 +250,13 @@ const firebaseConfig = {
   messagingSenderId: "782370422526",
   appId: "1:782370422526:web:f7b6180cb77fe7031cafaf"
 };
-const ADMIN_EMAIL  = "admin@vvflentini.it";   // account amministratore (vede tutti i turni)
-const EMAIL_DOMAIN = "vvflentini.it";          // convenzione: turnoa@, turnob@, turnoc@, turnod@ + dominio
+// Accesso dei turni: un solo account Firebase condiviso, la cui password e' CODE_PREFIX + codice del distaccamento.
+// Il codice NON e' scritto qui: lo conosce solo Firebase. Per cambiarlo si ricrea l'account nella Console.
+const SHARED_EMAIL = "distaccamento@vvflentini.it";
+const CODE_PREFIX  = "VVF-Lentini-";
+// L'amministratore entra con la propria email e password (l'indirizzo non e' scritto nella pagina:
+// e' indicato solo nelle regole del database). Qualsiasi account diverso da SHARED_EMAIL e' trattato come admin
+// dall'interfaccia, ma sono le regole del database a decidere cosa puo' davvero leggere e scrivere.
 const SEDE  = "Lentini (2002)";
 const LUOGO = "Lentini";                       // luogo stampato accanto alla data nei PDF
 const ANNO_INIZIO = 2024;                      // primo anno selezionabile
@@ -408,26 +453,131 @@ function startApp(){
   auth.onAuthStateChanged(onAuth);
   window.addEventListener('beforeunload',function(e){ if(S.pending>0){ e.preventDefault(); e.returnValue=''; return ''; } });
 }
+/* Memoria del dispositivo (codice, turno ricordato): se il browser la blocca, l'app funziona lo stesso */
+function lsGet(k){ try{ return localStorage.getItem(k); }catch(e){ return null; } }
+function lsSet(k,v){ try{ localStorage.setItem(k,v); }catch(e){} }
+function lsDel(k){ try{ localStorage.removeItem(k); }catch(e){} }
+const TURNI=['A','B','C','D'];
+let _noAuto=false; // impedisce il rientro automatico (dopo "Dimentica questo dispositivo")
+let _codeFails=0;  // tentativi sbagliati: dal terzo compare il suggerimento
+// Il codice si confronta in minuscolo e senza spazi: "Ab Cd" = "abcd".
+// (La password dell'account Firebase va quindi scritta tutta in minuscolo, senza spazi.)
+function normCode(v){ return String(v||'').toLowerCase().replace(/\s+/g,''); }
+
+function showScreen(which){ // 'code' | 'pick' | 'wait' | 'app'
+  const app=which==='app';
+  document.getElementById('app').classList.toggle('hide',!app);
+  document.getElementById('login').classList.toggle('hide',app);
+  ['code','pick','wait'].forEach(k=>{ const id='card'+cap1(k); document.getElementById(id).classList.toggle('hide',k!==which); });
+  if(which==='code'){ setTimeout(()=>{ const i=document.getElementById('liCode'); if(i) i.focus(); },50); }
+}
 function onAuth(user){
-  if(!user){ document.getElementById('app').classList.add('hide'); document.getElementById('login').classList.remove('hide'); detach(); return; }
+  if(!user){
+    detach(); S.turno=null;
+    const c=lsGet('vvfCode');
+    if(c && !_noAuto){ showScreen('wait'); signInCode(c,true); }
+    else showScreen('code');
+    return;
+  }
   S.email=(user.email||'').toLowerCase();
-  S.isAdmin=(S.email===ADMIN_EMAIL.toLowerCase());
-  if(S.isAdmin){ S.turno=S.turno||'A'; }
-  else { const m=S.email.match(/^turno([abcd])@/); S.turno=m?m[1].toUpperCase():null; }
-  document.getElementById('login').classList.add('hide');
-  document.getElementById('app').classList.remove('hide');
-  if(!S.turno){ document.getElementById('content').innerHTML='<div class="note">Questo utente non è associato a nessun turno. Usa un indirizzo del tipo <b>turnod@'+EMAIL_DOMAIN+'</b> oppure l\'account amministratore.</div>'; return; }
-  attach();
+  S.isAdmin=(S.email!==SHARED_EMAIL);
+  updHeader();
+  if(S.isAdmin){
+    if(!S.turno) S.turno=lsGet('vvfAdminTurno')||'A';
+    showScreen('app'); attach(); return;
+  }
+  if(S.turno && TURNI.indexOf(S.turno)>=0){ showScreen('app'); attach(); return; }
+  const rem=lsGet('vvfTurno');
+  if(rem && TURNI.indexOf(rem)>=0){ S.turno=rem; showScreen('app'); attach(); return; }
+  showPicker();
 }
-function doLogin(){
-  const e=document.getElementById('liEmail').value.trim(), p=document.getElementById('liPass').value;
-  document.getElementById('liErr').textContent='';
+function authMsg(err,kind){
+  const c=(err&&err.code)||'';
+  if(c==='auth/too-many-requests') return 'Troppi tentativi sbagliati: riprova tra qualche minuto.';
+  if(c==='auth/network-request-failed') return 'Nessuna connessione a internet.';
+  if(c==='auth/invalid-credential'||c==='auth/wrong-password'||c==='auth/user-not-found'||c==='auth/invalid-login-credentials'||c==='auth/invalid-email')
+    return kind==='code'?'Codice errato.':'Email o password errate.';
+  return 'Accesso non riuscito: '+(c||(err&&err.message)||err);
+}
+function signInCode(code,silent){
+  const err=document.getElementById('liErr'), btn=document.getElementById('liBtn'); err.textContent='';
+  if(btn) btn.disabled=true;
+  code=normCode(code);
+  return auth.signInWithEmailAndPassword(SHARED_EMAIL,CODE_PREFIX+code)
+    .then(()=>{ lsSet('vvfCode',code); _noAuto=false; _codeFails=0; document.getElementById('liTano').classList.add('hide'); })
+    .catch(e=>{
+      showScreen('code');
+      if(silent){ // codice memorizzato non piu' valido (es. cambiato dall'amministratore)
+        const c=(e&&e.code)||'';
+        if(c==='auth/network-request-failed'){ err.textContent='Nessuna connessione a internet: riprova appena torna la rete.'; }
+        else { lsDel('vvfCode'); err.textContent= c==='auth/too-many-requests' ? authMsg(e,'code') : 'Il codice del distaccamento \u00e8 cambiato: inseriscilo di nuovo.'; }
+      } else {
+        err.textContent=authMsg(e,'code');
+        const c=(e&&e.code)||'';
+        if(c!=='auth/network-request-failed' && c!=='auth/too-many-requests'){ _codeFails++; if(_codeFails>=3) document.getElementById('liTano').classList.remove('hide'); }
+      }
+    })
+    .then(()=>{ if(btn) btn.disabled=false; });
+}
+function doCode(){
+  const v=normCode(document.getElementById('liCode').value);
   if(!auth){ document.getElementById('liErr').textContent='Configurazione Firebase mancante.'; return; }
-  auth.signInWithEmailAndPassword(e,p).catch(err=>{ document.getElementById('liErr').textContent='Accesso non riuscito: '+(err.code||err.message); });
+  if(!v){ document.getElementById('liErr').textContent='Inserisci il codice.'; return; }
+  signInCode(v,false);
 }
-function doLogout(){
-  if(S.pending>0 && !confirm('Ci sono modifiche non ancora salvate sul server. Uscire comunque?')) return;
-  if(auth) auth.signOut();
+function showPicker(){
+  const t=new Date(), n=dayN(t.getFullYear(),t.getMonth()+1,t.getDate()), G=diurnoTurno(n), N=diurnoTurno(n-1), last=lsGet('vvfLastTurno');
+  document.getElementById('pickToday').textContent='Oggi, '+WDL[t.getDay()]+' '+t.getDate()+' '+MESI[t.getMonth()]+': diurno turno '+G+' \u00b7 notturno turno '+N;
+  document.getElementById('pickGrid').innerHTML=TURNI.map(T=>{
+    const st = T===G ? '<span class="st g">In servizio \u00b7 diurno</span>' : T===N ? '<span class="st n">In servizio \u00b7 notturno</span>' : '<span class="st r">Riposo</span>';
+    return '<button class="tbtn'+(T===last?' last':'')+'" onclick="pickTurno(\''+T+'\')"><span class="L">'+T+'</span><span class="w">Turno</span>'+st+'</button>';
+  }).join('');
+  document.getElementById('pickRemember').checked = lsGet('vvfRemember')!=='0';
+  showScreen('pick');
+}
+function pickTurno(T){
+  const rem=document.getElementById('pickRemember').checked;
+  lsSet('vvfRemember',rem?'1':'0'); lsSet('vvfLastTurno',T);
+  if(rem) lsSet('vvfTurno',T); else lsDel('vvfTurno');
+  S.turno=T; S.curDay=null; showScreen('app'); attach(); window.scrollTo(0,0);
+}
+function updHeader(){
+  const b=document.getElementById('hdrBtn'); if(!b) return;
+  if(S.isAdmin){ b.textContent='Esci'; b.classList.remove('amber'); b.title='Esci dall\'accesso amministratore'; }
+  else { b.textContent='Cambia turno'; b.classList.add('amber'); b.title='Torna alla scelta del turno'; }
+}
+function hdrAction(){
+  if(S.pending>0 && !confirm('Ci sono modifiche non ancora salvate sul server. Continuare comunque?')) return;
+  closeModal();
+  if(S.isAdmin){ S.turno=null; _noAuto=false; auth.signOut(); return; } // si torna all'accesso dei turni
+  detach(); S.turno=null; lsDel('vvfTurno'); showPicker();
+}
+function forgetDevice(){
+  if(!confirm('Dimenticare questo dispositivo?\n\nAlla prossima apertura servir\u00e0 di nuovo il codice del distaccamento.')) return;
+  lsDel('vvfCode'); lsDel('vvfTurno'); _noAuto=true; S.turno=null; auth.signOut();
+}
+function adminModal(){
+  openModal('<h3>Accesso amministratore</h3><div class="ms">Turno PROVA e backup di tutti i turni.</div>'
+    +'<label class="eyebrow">Email</label><input id="adEmail" type="email" autocomplete="username">'
+    +'<label class="eyebrow" style="margin-top:0.5rem">Password</label><input id="adPass" type="password" autocomplete="current-password" onkeydown="if(event.key===\'Enter\')doAdmin()">'
+    +'<div id="adErr" class="login-err" style="text-align:left;color:#C8102E"></div>'
+    +'<button class="btn btn-fire btn-full" style="margin-top:0.5rem" onclick="doAdmin()">Entra come amministratore</button>'
+    +'<div style="text-align:center;margin-top:0.8rem"><button class="linkbtn" style="color:var(--ink2)" onclick="doAdminReset()">Password dimenticata?</button></div>');
+  setTimeout(()=>{ const i=document.getElementById('adEmail'); if(i) i.focus(); },50);
+}
+function doAdmin(){
+  const e=val('adEmail').trim(), p=val('adPass'), err=document.getElementById('adErr'); err.textContent='';
+  if(!e||!p){ err.textContent='Inserisci email e password.'; return; }
+  if(e.toLowerCase()===SHARED_EMAIL){ err.textContent='Questo non \u00e8 un account amministratore.'; return; }
+  detach(); S.turno=null;
+  auth.signInWithEmailAndPassword(e,p).then(()=>closeModal()).catch(x=>{ err.textContent=authMsg(x,'admin'); });
+}
+function doAdminReset(){
+  const e=val('adEmail').trim(), err=document.getElementById('adErr'); err.textContent='';
+  if(!e){ err.textContent='Scrivi prima la tua email qui sopra.'; return; }
+  auth.sendPasswordResetEmail(e)
+    .then(()=>{ err.style.color='#2C8B4B'; err.textContent='Se l\'indirizzo \u00e8 registrato, ti arriva un\'email per scegliere una nuova password (controlla anche lo spam).'; })
+    .catch(x=>{ err.textContent=authMsg(x,'admin'); });
 }
 function changePasswordModal(){
   if(!auth||!auth.currentUser) return;
@@ -520,7 +670,7 @@ function periodControls(extra){
   let years=''; const yMax=(new Date().getFullYear())+40; for(let y=ANNO_INIZIO;y<=yMax;y++) years+='<option value="'+y+'"'+(y===S.year?' selected':'')+'>'+y+'</option>';
   let months=MESI.map((mm,i)=>'<option value="'+(i+1)+'"'+((i+1)===S.month?' selected':'')+'>'+cap1(mm)+'</option>').join('');
   let turnoSel;
-  if(S.isAdmin){ turnoSel='<div class="field"><label class="eyebrow">Turno</label><select onchange="S.turno=this.value;changePeriod()">'+['A','B','C','D','PROVA'].map(t=>'<option value="'+t+'"'+(t===S.turno?' selected':'')+'>'+(t==='PROVA'?'PROVA (test)':t)+'</option>').join('')+'</select></div>'; }
+  if(S.isAdmin){ turnoSel='<div class="field"><label class="eyebrow">Turno</label><select onchange="S.turno=this.value;lsSet(\'vvfAdminTurno\',S.turno);changePeriod()">'+['A','B','C','D','PROVA'].map(t=>'<option value="'+t+'"'+(t===S.turno?' selected':'')+'>'+(t==='PROVA'?'PROVA (test)':t)+'</option>').join('')+'</select></div>'; }
   else { turnoSel='<div class="field"><label class="eyebrow">Turno</label><input value="'+esc(S.turno)+'" disabled></div>'; }
   return '<div class="ctl-row">'+turnoSel
     +'<div class="field"><label class="eyebrow">Mese</label><select onchange="S.month=+this.value;changePeriod()">'+months+'</select></div>'
@@ -762,7 +912,10 @@ function scSetup(){
     +(off.length?'<div class="sec-h"><span class="eyebrow">Non in servizio in '+ml+'</span></div>'+off.map(p=>card(p,false)).join(''):'')
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezzi+'<button class="btn btn-out btn-full" onclick="mezzoModal(null)" style="margin-top:0.3rem">+ Aggiungi mezzo</button>'
     +'<div class="sec-h"><span class="eyebrow">Codici</span></div>'+codes+'<button class="btn btn-out btn-full" onclick="codeModal()" style="margin-top:0.3rem">+ Aggiungi codice</button>'
-    +'<div class="sec-h"><span class="eyebrow">Account</span></div><div class="row"><div><div class="rn">'+esc(S.email)+'</div><div class="rs">'+(S.isAdmin?'Amministratore (tutti i turni)':'Turno '+esc(S.turno))+'</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
+    +'<div class="sec-h"><span class="eyebrow">Accesso</span></div>'
+    +(S.isAdmin
+      ? '<div class="row"><div><div class="rn">'+esc(S.email)+'</div><div class="rs">Amministratore (tutti i turni)</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
+      : '<div class="row"><div><div class="rn">Codice del distaccamento</div><div class="rs">Questo dispositivo \u00e8 abilitato: non serve reinserire il codice.</div></div><button class="btn btn-out btn-xs" onclick="forgetDevice()">Dimentica questo dispositivo</button></div>')
     +'<div class="sec-h"><span class="eyebrow">Backup</span></div>'
     +'<div class="row"><div><div class="rn">'+(S.isAdmin?'Tutti i turni (A, B, C, D, prova)':'Turno '+esc(S.turno))+'</div><div class="rs">Salva in un file tutto: personale, codici, mezzi e tutti i mesi di tutti gli anni.</div></div><button class="btn btn-fire btn-xs" onclick="doBackup()">Esegui backup</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Fissa</span></div>';
