@@ -1077,25 +1077,34 @@ function pdfSign(doc,placeDate,W,y,signer){
   const H=doc.internal.pageSize.getHeight(); if(y+16>H){ doc.addPage(); y=24; }
   doc.setFont('helvetica','normal'); doc.setFontSize(9); doc.setTextColor(91,99,110);
   doc.text(placeDate,16,y);
-  doc.text('Il Capo Turno',W-66,y);
+  doc.text(_signLabel,W-66,y);
   doc.text('______________________________',W-66,y+8);
   if(signer){ doc.setFont('helvetica','bold'); doc.setTextColor(16,21,30); doc.text(signer,W-66,y+13); doc.setFont('helvetica','normal'); doc.setTextColor(91,99,110); }
 }
 
 /* Firma: chiede quale Capo Squadra genera il documento, poi produce il PDF */
-let _pendingPdf=null, _signerList=[];
+let _pendingPdf=null, _signerList=[], _signLabel='Il Capo Turno';
+function isCapo(p){ return ['CR','CSE','CS'].indexOf(p.q)>=0; }
+// Firma: in cima i capi squadra; sotto, "in assenza del capo squadra", gli altri vigili.
+// Per il PDF del giorno compare solo chi e' presente quel giorno (non in salto, non assente).
 function askSigner(kind,arg){
-  if(!window.jspdf){ alert('Il modulo PDF non è ancora caricato. Controlla la connessione e riprova.'); return; }
-  const cs=personArr().filter(p=>['CR','CSE','CS'].indexOf(p.q)>=0);
-  _signerList = cs.length?cs:personArr();
-  if(!_signerList.length){ alert('Aggiungi prima il personale in Impostazioni.'); return; }
-  _pendingPdf={kind,arg};
-  let btns=_signerList.map((p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+'</button>').join('');
-  openModal('<h3>Chi firma il documento?</h3><div class="ms">Seleziona il Capo Squadra che lo sta generando</div>'+btns
-    +'<div class="cap" style="margin-top:0.4rem">'+(cs.length?'Qualifiche CS / CSE / CR':'Nessun CS in elenco: mostro tutto il personale')+'</div>');
+  if(!window.jspdf){ alert('Il modulo PDF non \u00e8 ancora caricato. Controlla la connessione e riprova.'); return; }
+  let pool=personArr();
+  if(kind==='pres'){ const pr=dayRoster(arg).filter(r=>!r.isR && !isAbsent(r.code)).map(r=>r.p); if(pr.length) pool=pr; }
+  if(!pool.length){ alert('Aggiungi prima il personale in Impostazioni.'); return; }
+  const cs=pool.filter(isCapo), others=pool.filter(p=>!isCapo(p));
+  _signerList=cs.concat(others); _pendingPdf={kind,arg};
+  const btn=(p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+'</button>';
+  let html='<h3>Chi firma il documento?</h3><div class="ms">'+(kind==='pres'?'Personale presente il '+arg+' '+MESI[S.month-1]:'Personale del turno')+'</div>';
+  if(cs.length) html+='<div class="eyebrow" style="margin:0 0 0.35rem">Capo squadra</div>'+cs.map((p,i)=>btn(p,i)).join('');
+  else html+='<div class="note" style="margin:0 0 0.7rem">'+(kind==='pres'?'Nessun capo squadra presente oggi':'Nessun capo squadra nel turno')+': pu\u00f2 firmare un altro vigile.</div>';
+  if(others.length) html+='<div class="eyebrow" style="margin:'+(cs.length?'0.8rem':'0')+' 0 0.35rem">'+(cs.length?'In assenza del capo squadra':'Altro personale')+'</div>'+others.map((p,j)=>btn(p,cs.length+j)).join('');
+  html+='<div class="cap" style="margin-top:0.4rem">Se firma un vigile che non \u00e8 capo squadra, nel PDF compare \u201cPer il Capo Turno\u201d.</div>';
+  openModal(html);
 }
 function doSign(i){
   const p=_signerList[i]; const s=p.q+' '+(p.cognome||'')+' '+(p.nome||''); closeModal();
+  _signLabel = isCapo(p) ? 'Il Capo Turno' : 'Per il Capo Turno';
   const pp=_pendingPdf||{};
   try{ if(pp.kind==='pres') pdfPresenze(pp.arg,s); else if(pp.kind==='ferie') pdfFerie(s); else if(pp.kind==='buoni') pdfBuoni(s); }
   catch(e){ console.error(e); alert('Errore nella creazione del PDF: '+(e&&e.message||e)); }
