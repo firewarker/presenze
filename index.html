@@ -131,6 +131,9 @@
   .btn{font-family:'Barlow Semi Condensed';font-weight:600;letter-spacing:0.03em;border:none;border-radius:8px;padding:0.7rem 1rem;font-size:0.92rem;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;gap:0.4rem;text-transform:uppercase;}
   .btn-full{width:100%;} .btn-fire{background:var(--fire);color:#fff;} .btn-fire:hover{background:#A50D26;}
   .btn-amber{background:var(--amber);color:#3d2d00;}
+  .btn-steel{background:var(--steel);color:#fff;} .btn-steel:hover{background:#174A7D;}
+  .two{display:flex;gap:0.5rem;flex-wrap:wrap;} .two .btn{flex:1 1 210px;}
+  .steps{margin:0.2rem 0 0.8rem 1.1rem;font-size:0.8rem;line-height:1.5;} .steps li{margin:0.15rem 0;}
   .btn-out{background:var(--paper);color:var(--ink);border:1px solid var(--line);} .btn-out:hover{background:var(--paper2);}
   .btn-xs{padding:0.32rem 0.6rem;font-size:0.72rem;border-radius:6px;}
   .mt{margin-top:1.05rem;}
@@ -259,7 +262,9 @@ const CODE_PREFIX  = "VVF-Lentini-";
 // dall'interfaccia, ma sono le regole del database a decidere cosa puo' davvero leggere e scrivere.
 const SEDE  = "Lentini (2002)";
 const LUOGO = "Lentini";                       // luogo stampato accanto alla data nei PDF
-const ANNO_INIZIO = 2024;                      // primo anno selezionabile
+const ANNO_INIZIO = 2024;
+// Destinatari email predefiniti (modificabili per ogni turno in Impostazioni). Il turno PROVA non ha destinatari.
+const EMAIL_DEFAULT = { pres:'fureria.siracusa@vigilfuoco.it', ferie:'fureria.siracusa@vigilfuoco.it', buoni:'informatica.siracusa@vigilfuoco.it' };                      // primo anno selezionabile
 const LEGACY_FERIE_YEAR = 2026;                // anno a cui appartengono le ferie inserite con la versione precedente
 
 /* ======================= COSTANTI ======================= */
@@ -282,6 +287,7 @@ const ICONS={
  sun:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="4"/><line x1="12" y1="2" x2="12" y2="5"/><line x1="12" y1="19" x2="12" y2="22"/><line x1="2" y1="12" x2="5" y2="12"/><line x1="19" y1="12" x2="22" y2="12"/><line x1="5" y1="5" x2="7" y2="7"/><line x1="17" y1="17" x2="19" y2="19"/></svg>',
  ticket:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M3 8a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v2a2 2 0 0 0 0 4v2a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-2a2 2 0 0 0 0-4z"/><line x1="13" y1="6" x2="13" y2="18" stroke-dasharray="2 2"/></svg>',
  sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.3" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="2.3" fill="currentColor" stroke="none"/></svg>',
+ mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
 };
@@ -321,7 +327,7 @@ function engTurno(){ return S.turno==='PROVA' ? 'D' : S.turno; }
 let auth, db, scopeRefs=[];
 const S={ turno:null, isAdmin:false, email:'', year:(new Date().getFullYear()), month:(new Date().getMonth()+1), tab:0,
           personale:{}, codici:{}, cells:{}, note:{}, esterni:{}, mezzi:{}, saltoOv:{}, mezziOp:{},
-          yc:{}, conn:'wait', pending:0 };
+          yc:{}, conn:'wait', pending:0, emailCfg:{} };
 
 /* ======================= TEMA ======================= */
 // 'auto' segue il dispositivo (chiaro di giorno, scuro se telefono/PC sono in modalita' scura); 'light' e 'dark' lo forzano
@@ -602,12 +608,13 @@ function detach(){ scopeRefs.forEach(r=>r.off()); scopeRefs=[]; }
 function attach(){
   detach();
   // svuota subito i dati del periodo precedente: mai mostrare per un attimo il mese/turno sbagliato
-  S.personale={}; S.codici={}; S.mezzi={}; S.cells={}; S.note={}; S.esterni={}; S.saltoOv={}; S.mezziOp={}; S.yc={};
+  S.personale={}; S.codici={}; S.mezzi={}; S.cells={}; S.note={}; S.esterni={}; S.saltoOv={}; S.mezziOp={}; S.yc={}; S.emailCfg={};
   const base='turni/'+S.turno, mbase=base+'/anno/'+S.year+'/mesi/'+S.month;
   const bind=(path,key)=>{ const r=db.ref(path); r.on('value',s=>{ S[key]=s.val()||{}; render(); }, e=>{ console.error(path,e); }); scopeRefs.push(r); };
   bind(base+'/personale','personale');
   bind(base+'/codici','codici');
   bind(base+'/mezzi','mezzi');
+  bind(base+'/email','emailCfg');
   bind(mbase+'/celle','cells');
   bind(mbase+'/note','note');
   bind(mbase+'/esterni','esterni');
@@ -720,7 +727,7 @@ function scProspetto(){
     +'<div class="grid-wrap"><table class="grid"><thead>'+head+'</thead><tbody>'+body+extBody+'</tbody></table></div>'
     +'<div class="cap">Vuoto = presente · R = salto (automatico) · RS = rientro in straordinario (tocca un R) · EXT = personale esterno (si aggiunge da Presenze giornaliere)</div>'
     +legendHtml()
-    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Esporta prospetto / richiesta ferie (PDF)</button>';
+    +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'ferie\',null,\'save\')">'+ICONS.sun+' Esporta prospetto ferie (PDF)</button><button class="btn btn-steel" onclick="askSigner(\'ferie\',null,\'mail\')">'+ICONS.mail+' Invia per email</button></div>';
 }
 function legendHtml(){ const c=allCodici(); let s='<div class="legend">'; ['L','M','MB','SD','SN'].forEach(k=>{ if(c[k]) s+='<span><b style="'+chip(c[k][1],c[k][2])+'"></b>'+k+' '+esc(c[k][0].toLowerCase())+'</span>'; }); s+='<span><b style="background:var(--rbg);border:1px dashed var(--rbd)"></b>R recupero (auto)</span><span><b style="'+chip('#FAF1D6','#876200','#E7C879')+'"></b>RS rientro straordinario</span></div>'; return s; }
 
@@ -803,7 +810,7 @@ function scPresenze(){
     +list
     +'<div class="sec-h"><span class="eyebrow">Personale esterno presso Lentini</span></div>'+extHtml+'<button class="btn btn-out btn-full" onclick="externalModal('+S.curDay+')" style="margin-top:0.3rem">+ Aggiungi personale esterno</button>'
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezHtml
-    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'pres\','+S.curDay+')">'+ICONS.check+' Genera PDF presenze del giorno</button>';
+    +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'pres\','+S.curDay+',\'save\')">'+ICONS.check+' Genera PDF presenze del giorno</button><button class="btn btn-steel" onclick="askSigner(\'pres\','+S.curDay+',\'mail\')">'+ICONS.mail+' Invia per email</button></div>';
 }
 let _extPick=[];
 function pickExt(i){ const x=_extPick[i]||{}; const set=(id,v)=>{const e=document.getElementById(id); if(e)e.value=v||'';}; set('exQual',x.q); set('exCognome',x.cognome); set('exNome',x.nome); set('exProv',x.prov); }
@@ -837,7 +844,7 @@ function scFerie(){
     +'<div class="note" style="margin-top:0">Il prospetto da inviare al Capo Turno (entro il 20 per il mese successivo) mostra le giornate di servizio, i <b>salti (R)</b> e le <b>ferie (L)</b>. Le ferie si segnano nel Prospetto mensile con <b>L</b>.</div>'
     +'<div class="sec-h"><span class="eyebrow">Saldi ferie '+Y+'</span></div>'+(rows||'<div class="rs">Nessuna persona in servizio.</div>')
     +'<div class="cap" style="text-align:left">Da godere = spettanti '+Y+' + residue '+(Y-1)+' − godute '+Y+'. Le residue si calcolano da sole dall’anno prima; puoi correggerle a mano in Impostazioni.</div>'
-    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'ferie\')">'+ICONS.sun+' Genera PDF prospetto / richiesta ferie</button>';
+    +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'ferie\',null,\'save\')">'+ICONS.sun+' Genera PDF prospetto ferie</button><button class="btn btn-steel" onclick="askSigner(\'ferie\',null,\'mail\')">'+ICONS.mail+' Invia per email</button></div>';
 }
 
 /* ---------- BUONI PASTO ---------- */
@@ -881,7 +888,7 @@ function scBuoni(){
     +(extRows?'<div class="sec-h"><span class="eyebrow">Buoni pasto — personale esterno</span></div>'+extRows:'')
     +'<div class="row" style="border-left:3px solid #C8102E;background:'+tint('#FCEBEE','#C8102E')+'"><div class="rn cond" style="font-size:1.05rem;color:var(--ink)">TOTALE TURNO '+esc(S.turno)+'</div><div class="cond" style="font-weight:700;font-size:1.6rem;color:#C8102E">'+tot+'</div></div>'
     +'<div class="note">Presente = 1 · rientro straordinario = 1 · sost. diurna = 2 · sost. notturna = 1 · esterno in straordinario = 1 · esterno in sostituzione = 0.</div>'
-    +'<button class="btn btn-fire btn-full mt" onclick="askSigner(\'buoni\')">'+ICONS.ticket+' Genera PDF buoni pasto</button>'
+    +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'buoni\',null,\'save\')">'+ICONS.ticket+' Genera PDF buoni pasto</button><button class="btn btn-steel" onclick="askSigner(\'buoni\',null,\'mail\')">'+ICONS.mail+' Invia per email</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Contabilità sostituzioni del personale</span></div>'
     +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell’anno.</div>'+subRows;
 }
@@ -916,6 +923,14 @@ function scSetup(){
     +(S.isAdmin
       ? '<div class="row"><div><div class="rn">'+esc(S.email)+'</div><div class="rs">Amministratore (tutti i turni)</div></div><button class="btn btn-out btn-xs" onclick="changePasswordModal()">Cambia password</button></div>'
       : '<div class="row"><div><div class="rn">Codice del distaccamento</div><div class="rs">Questo dispositivo \u00e8 abilitato: non serve reinserire il codice.</div></div><button class="btn btn-out btn-xs" onclick="forgetDevice()">Dimentica questo dispositivo</button></div>')
+    +'<div class="sec-h"><span class="eyebrow">Invio per email \u2014 destinatari</span></div>'
+    +(S.turno==='PROVA'
+      ? '<div class="note" style="margin-top:0">Turno PROVA: l\'invio per email non ha destinatari, per non mandare prove alla fureria.</div>'
+      : '<div class="scard">'
+        +[['pres','Presenze giornaliere'],['ferie','Prospetto ferie'],['buoni','Prospetto buoni pasto']].map(x=>'<label class="eyebrow" style="display:block;margin-top:0.35rem">'+x[1]+'</label><input id="em_'+x[0]+'" type="email" value="'+esc((S.emailCfg&&S.emailCfg[x[0]])||EMAIL_DEFAULT[x[0]])+'" style="width:100%;padding:0.45rem 0.55rem;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.88rem;margin-top:0.2rem">').join('')
+        +'<div class="rs" style="margin-top:0.4rem">Pi\u00f9 indirizzi: separali con una virgola.</div>'
+        +'<button class="btn btn-out btn-xs" style="margin-top:0.55rem" onclick="saveEmails()">Salva indirizzi</button></div>')
+    +(noPicker()?'<div class="note">Su questo browser i PDF vanno nella cartella <b>Download</b>. '+FIREFOX_HINT+'</div>':'')
     +'<div class="sec-h"><span class="eyebrow">Backup</span></div>'
     +'<div class="row"><div><div class="rn">'+(S.isAdmin?'Tutti i turni (A, B, C, D, prova)':'Turno '+esc(S.turno))+'</div><div class="rs">Salva in un file tutto: personale, codici, mezzi e tutti i mesi di tutti gli anni.</div></div><button class="btn btn-fire btn-xs" onclick="doBackup()">Esegui backup</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Fissa</span></div>';
@@ -1015,16 +1030,18 @@ function downloadBlob(blob,name){
 async function shareOrDownload(blob,name,mime){
   try{
     const f=new File([blob],name,{type:mime});
-    if(isMobile() && navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:name}); return; }
+    if(isMobile() && navigator.canShare && navigator.canShare({files:[f]})){ await navigator.share({files:[f],title:name}); return true; }
   }catch(e){
-    if(e && e.name==='AbortError') return; // annullato dall'utente
+    if(e && e.name==='AbortError') return false; // annullato dall'utente
     if(e && e.name==='NotAllowedError'){ // il browser vuole un nuovo tocco: offro un pulsante
       window._pendingFile={blob,name,mime};
       openModal('<h3>File pronto</h3><div class="ms">'+esc(name)+'</div><button class="btn btn-fire btn-full" onclick="closeModal();shareOrDownload(window._pendingFile.blob,window._pendingFile.name,window._pendingFile.mime)">Salva / condividi</button>');
-      return;
+      return false;
     }
   }
   downloadBlob(blob,name);
+  if(!isMobile()) toast('PDF scaricato: '+name);
+  return true;
 }
 // getBlob puo' essere asincrono (backup): la finestra si apre SUBITO al tocco, i dati si preparano dopo
 async function saveOut(name,mime,ext,desc,getBlob){
@@ -1037,10 +1054,72 @@ async function saveOut(name,mime,ext,desc,getBlob){
       catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
     }
   }
-  try{ const blob=await getBlob(); await shareOrDownload(blob,name,mime); return true; }
+  try{ const blob=await getBlob(); return await shareOrDownload(blob,name,mime); }
   catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
 }
 function savePdf(doc,name){ return saveOut(name,'application/pdf','.pdf','Documento PDF',()=>doc.output('blob')); }
+function noPicker(){ return !window.showSaveFilePicker && !isMobile(); } // es. Firefox su PC
+const FIREFOX_HINT='Per scegliere ogni volta la cartella, in Firefox: <b>Impostazioni \u2192 Generale \u2192 Download \u2192 \u201cChiedi sempre dove salvare i file\u201d</b>.';
+
+/* PDF: si salva SEMPRE prima (scegliendo la cartella); con "Invia per email" poi si prepara l'email */
+async function outPdf(doc,name,mail){
+  const blob=doc.output('blob');
+  const ok=await saveOut(name,'application/pdf','.pdf','Documento PDF',()=>blob);
+  if(!ok || _pdfMode!=='mail') return;
+  window._lastPdf={blob,name,mail,signer:_signer};
+  mailModal();
+}
+function emailTo(kind){ if(S.turno==='PROVA') return ''; const c=S.emailCfg||{}; return (c[kind]||EMAIL_DEFAULT[kind]||'').trim(); }
+function mailBody(){
+  const m=window._lastPdf, sg=m.signer||{};
+  return 'Buongiorno,\n'+m.mail.body+'\n\nCordiali saluti\n'+(sg.name||'')+'\n'+(sg.capo?'Il Capo Turno':'per il Capo Turno')+' \u2013 Distaccamento di Lentini';
+}
+function mailModal(){
+  const m=window._lastPdf; if(!m) return;
+  const to=emailTo(m.mail.kind), prova=(S.turno==='PROVA');
+  const toField='<label class="eyebrow">Destinatario</label><input id="mlTo" type="email" value="'+esc(to)+'" placeholder="indirizzo email">'
+    +(prova?'<div class="hint">Turno PROVA: nessun destinatario, per non mandare email di prova alla fureria.</div>':'')
+    +'<label class="eyebrow" style="margin-top:0.5rem">Oggetto</label><div class="hint" style="font-size:0.8rem;color:var(--ink)">'+esc(m.mail.subject)+'</div>';
+  if(isMobile()){
+    openModal('<h3>Invia per email</h3><div class="ms">'+esc(m.name)+'</div>'
+      +'<ol class="steps"><li>Tocca <b>Condividi per email</b> e scegli l\'app di posta: il PDF \u00e8 gi\u00e0 allegato.</li><li>Scrivi il destinatario (lo puoi copiare qui sotto) e invia.</li></ol>'
+      +toField
+      +'<button class="btn btn-steel btn-full" style="margin-top:0.8rem" onclick="shareMail()">'+ICONS.mail+' Condividi per email</button>'
+      +'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="copyText(val(\'mlTo\'),\'Indirizzo copiato\')">Copia indirizzo</button>');
+    return;
+  }
+  openModal('<h3>Invia per email</h3><div class="ms">PDF salvato: <b>'+esc(m.name)+'</b></div>'
+    +'<ol class="steps"><li>Premi <b>Apri l\'email</b>: si apre il programma di posta (es. Thunderbird) con destinatario, oggetto e testo gi\u00e0 scritti.</li>'
+    +'<li><b>Trascina il PDF</b> nell\'email'+(noPicker()?' dalla freccia dei download in alto a destra di Firefox':' dalla cartella dove l\'hai salvato')+'.</li><li>Premi <b>Invia</b>.</li></ol>'
+    +toField
+    +'<button class="btn btn-steel btn-full" style="margin-top:0.8rem" onclick="sendMail()">'+ICONS.mail+' Apri l\'email</button>'
+    +'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="copyMail()">Copia destinatario, oggetto e testo</button>'
+    +'<div class="hint" style="margin-top:0.5rem">Se non si apre nessun programma di posta, usa \u201cCopia\u201d e incolla in un\'email nuova.'+(noPicker()?' '+FIREFOX_HINT:'')+'</div>');
+}
+function openMailto(u){ const a=document.createElement('a'); a.href=u; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
+function sendMail(){
+  const m=window._lastPdf; if(!m) return;
+  const to=val('mlTo').trim();
+  if(to && !/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+(\s*[,;]\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+)*$/.test(to)){ alert('Indirizzo email non valido.'); return; }
+  const url='mailto:'+to.replace(/\s*;\s*/g,',').replace(/\s+/g,'')+'?subject='+encodeURIComponent(m.mail.subject)+'&body='+encodeURIComponent(mailBody().replace(/\n/g,'\r\n'));
+  openMailto(url);
+  toast('Email aperta: ora trascina dentro il PDF '+m.name);
+}
+function copyText(t,msg){
+  const done=()=>toast(msg||'Copiato');
+  try{ navigator.clipboard.writeText(t).then(done,()=>{ prompt('Copia il testo:',t); }); }catch(e){ prompt('Copia il testo:',t); }
+}
+function copyMail(){ const m=window._lastPdf; if(!m) return; copyText('A: '+val('mlTo')+'\nOggetto: '+m.mail.subject+'\n\n'+mailBody(),'Destinatario, oggetto e testo copiati'); }
+async function shareMail(){
+  const m=window._lastPdf; if(!m) return;
+  try{ const f=new File([m.blob],m.name,{type:'application/pdf'}); await navigator.share({files:[f],title:m.mail.subject,text:mailBody()}); closeModal(); }
+  catch(e){ if(!(e&&e.name==='AbortError')) toast('Condivisione non riuscita: '+(e&&e.message||e),true); }
+}
+function saveEmails(){
+  const o={}, re=/^[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+(\s*[,;]\s*[^\s@,;]+@[^\s@,;]+\.[^\s@,;]+)*$/;
+  for(const k of ['pres','ferie','buoni']){ const v=val('em_'+k).trim(); if(v && !re.test(v)){ alert('Indirizzo non valido: '+v); return; } o[k]=v||EMAIL_DEFAULT[k]; }
+  W(db.ref(refTurno()+'/email').set(o)); toast('Indirizzi email salvati');
+}
 
 /* ======================= BACKUP ======================= */
 // File JSON con gli stessi dati del database: in caso di emergenza si ricarica dalla console Firebase
@@ -1083,17 +1162,17 @@ function pdfSign(doc,placeDate,W,y,signer){
 }
 
 /* Firma: chiede quale Capo Squadra genera il documento, poi produce il PDF */
-let _pendingPdf=null, _signerList=[], _signLabel='Il Capo Turno';
+let _pendingPdf=null, _signerList=[], _signLabel='Il Capo Turno', _signer=null, _pdfMode='save';
 function isCapo(p){ return ['CR','CSE','CS'].indexOf(p.q)>=0; }
 // Firma: in cima i capi squadra; sotto, "in assenza del capo squadra", gli altri vigili.
 // Per il PDF del giorno compare solo chi e' presente quel giorno (non in salto, non assente).
-function askSigner(kind,arg){
+function askSigner(kind,arg,mode){
   if(!window.jspdf){ alert('Il modulo PDF non \u00e8 ancora caricato. Controlla la connessione e riprova.'); return; }
   let pool=personArr();
   if(kind==='pres'){ const pr=dayRoster(arg).filter(r=>!r.isR && !isAbsent(r.code)).map(r=>r.p); if(pr.length) pool=pr; }
   if(!pool.length){ alert('Aggiungi prima il personale in Impostazioni.'); return; }
   const cs=pool.filter(isCapo), others=pool.filter(p=>!isCapo(p));
-  _signerList=cs.concat(others); _pendingPdf={kind,arg};
+  _signerList=cs.concat(others); _pendingPdf={kind,arg,mode:mode||'save'};
   const btn=(p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+'</button>';
   let html='<h3>Chi firma il documento?</h3><div class="ms">'+(kind==='pres'?'Personale presente il '+arg+' '+MESI[S.month-1]:'Personale del turno')+'</div>';
   if(cs.length) html+='<div class="eyebrow" style="margin:0 0 0.35rem">Capo squadra</div>'+cs.map((p,i)=>btn(p,i)).join('');
@@ -1105,6 +1184,7 @@ function askSigner(kind,arg){
 function doSign(i){
   const p=_signerList[i]; const s=p.q+' '+(p.cognome||'')+' '+(p.nome||''); closeModal();
   _signLabel = isCapo(p) ? 'Il Capo Turno' : 'Per il Capo Turno';
+  _signer={name:s, capo:isCapo(p)}; _pdfMode=(_pendingPdf&&_pendingPdf.mode)||'save';
   const pp=_pendingPdf||{};
   try{ if(pp.kind==='pres') pdfPresenze(pp.arg,s); else if(pp.kind==='ferie') pdfFerie(s); else if(pp.kind==='buoni') pdfBuoni(s); }
   catch(e){ console.error(e); alert('Errore nella creazione del PDF: '+(e&&e.message||e)); }
@@ -1137,7 +1217,10 @@ function pdfPresenze(day,signer){
     doc.autoTable({ startY:y, head:[['Automezzo','Operatività','Note']], body:mb, theme:'grid', styles:{font:'helvetica',fontSize:8.5,cellPadding:1.6,lineColor:[154,160,168],lineWidth:0.2}, headStyles:{fillColor:[200,16,46],textColor:[255,255,255],halign:'center',fontStyle:'bold'}, alternateRowStyles:{fillColor:[246,247,244]}, columnStyles:{0:{cellWidth:80},1:{halign:'center',cellWidth:30,fontStyle:'bold'}} });
     y=doc.lastAutoTable.finalY; }
   pdfSign(doc,LUOGO+', '+day+' '+MESI[S.month-1]+' '+S.year,W,y+14,signer);
-  savePdf(doc,'presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf');
+  const dlab=WDL[dd.getDay()]+' '+day+' '+MESI[S.month-1]+' '+S.year;
+  outPdf(doc,'presenze_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'-'+String(day).padStart(2,'0')+'.pdf',
+    {kind:'pres', subject:'Prospetto presenze Turno '+S.turno+' \u2013 '+dlab,
+     body:'in allegato il prospetto presenze del Turno '+S.turno+' di '+dlab+' (servizio '+(du.tipo==='G'?'diurno 08:00-20:00':'notturno 20:00-08:00')+').'});
 }
 
 function pdfFerie(signer){
@@ -1169,7 +1252,9 @@ function pdfFerie(signer){
   const lines=doc.splitTextToSize(fl.length?fl.join('     '):'Nessuna richiesta.',W-32); doc.text(lines,16,y); y+=5*lines.length;
   doc.setFontSize(8); doc.setTextColor(91,99,110); doc.text('Malattie, missioni e sostituzioni non sono riportate: vengono registrate durante il mese.',16,y);
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+12,signer);
-  savePdf(doc,'prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+  outPdf(doc,'prospetto_ferie_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf',
+    {kind:'ferie', subject:'Prospetto mensile e richiesta ferie Turno '+S.turno+' \u2013 '+MESI[S.month-1]+' '+S.year,
+     body:'in allegato il prospetto mensile con la richiesta ferie del Turno '+S.turno+' per il mese di '+MESI[S.month-1]+' '+S.year+'.'});
 }
 
 function pdfBuoni(signer){
@@ -1211,7 +1296,9 @@ function pdfBuoni(signer){
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
   doc.text('Personale: vuoto = presente (1)   RS = rientro straordinario (1)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario (1)   SO = sostituzione (0).',16,y);
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
-  savePdf(doc,'buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf');
+  outPdf(doc,'buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf',
+    {kind:'buoni', subject:'Prospetto buoni pasto Turno '+S.turno+' \u2013 '+MESI[S.month-1]+' '+S.year,
+     body:'in allegato il prospetto dei buoni pasto del Turno '+S.turno+' per il mese di '+MESI[S.month-1]+' '+S.year+'.'});
 }
 
 window.addEventListener('load',startApp);
