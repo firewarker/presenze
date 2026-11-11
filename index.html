@@ -1365,12 +1365,12 @@ function pdfBuoni(signer){
             ['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo)).concat(['Buoni'])];
   let body=[], meta={}, totTurno=0;
   people.forEach(function(p){ const ri=body.length; let row=[p.q+' '+nomeBreve(p)]; let tot=0;
-    wd.forEach(function(c,ci){ const b=buonoCella(p,c); tot+=b.val; meta[ri+'_'+(ci+1)]=b.show; row.push(b.val>0 ? (b.show ? b.show+' '+b.val : String(b.val)) : b.show); });
+    wd.forEach(function(c,ci){ const b=buonoCella(p,c); tot+=b.val; meta[ri+'_'+(ci+1)]=(b.val>0?'N':'Z'); row.push(String(b.val)); });
     row.push(String(tot)); totTurno+=tot; body.push(row); });
   const nPers=body.length;
   esterniRows().forEach(function(x){ const ri=body.length; const bt=esternoBuoni(x);
     let row=['EXT '+x.q+' '+nomeBreve(x)];
-    wd.forEach(function(c,ci){ const mot=x.days[c.day], nb=x.nb[c.day]||0; const show=mot?((mot==='Straordinario'?'ST':'SO')+(nb>0?' '+nb:'')):''; meta[ri+'_'+(ci+1)]=show?(nb>0?'EXTY':'EXTG'):''; row.push(show); });
+    wd.forEach(function(c,ci){ const mot=x.days[c.day], nb=x.nb[c.day]||0; meta[ri+'_'+(ci+1)]=mot?(nb>0?'N':'Z'):''; row.push(mot?String(nb):''); });
     row.push(String(bt)); totTurno+=bt; body.push(row); });
   const cs={0:{halign:'left',cellWidth:44,fontSize:8}}; cs[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};
   doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
@@ -1381,18 +1381,16 @@ function pdfBuoni(signer){
       if(d.section==='head' && d.row.index===0){ d.cell.styles.fillColor=[29,48,80]; d.cell.styles.textColor=[255,255,255]; d.cell.styles.fontSize=7.5; }
       if(d.section==='body' && d.column.index===0 && d.row.index>=nPers){ d.cell.styles.fillColor=[255,251,242]; d.cell.styles.textColor=[120,98,0]; }
       if(d.section==='body' && d.column.index>0 && d.column.index<=last){ const v=meta[d.row.index+'_'+d.column.index];
-        if(v==='R'||v==='EXTG'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];}
-        else if(v==='SD'||v==='RS'||v==='EXTY'){d.cell.styles.fillColor=[250,241,214];d.cell.styles.textColor=[135,98,0];}
-        else if(v==='SN'){d.cell.styles.fillColor=[236,231,246];d.cell.styles.textColor=[91,63,160];}
-        else if(v && isAbsent(v)){d.cell.styles.fillColor=[247,227,230];d.cell.styles.textColor=[200,16,46];}
-        d.cell.styles.fontStyle='bold'; } } });
+        // solo numeri: nessun motivo di assenza o tipo di servizio nel PDF dei buoni; 0 in grigio
+        if(v==='Z'){d.cell.styles.fillColor=[237,239,234];d.cell.styles.textColor=[115,122,112];d.cell.styles.fontStyle='normal';}
+        else d.cell.styles.fontStyle='bold'; } } });
   let y=doc.lastAutoTable.finalY+6;
   if(y+30>doc.internal.pageSize.getHeight()){ doc.addPage(); y=20; }
   doc.setFillColor(252,235,238); doc.rect(14,y,W-28,9,'F'); doc.setDrawColor(154,160,168); doc.setLineWidth(0.3); doc.rect(14,y,W-28,9,'S');
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
   doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(totTurno),W-20,y+6.5,{align:'right'}); y+=14;
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
-  { const lg=doc.splitTextToSize('Il numero in ogni casella = buoni pasto di quel giorno.   Personale: 1 = presente   RS = rientro in straordinario   SD = sostituzione diurna   SN = sostituzione notturna   R = recupero e sigle di assenza = nessun buono.    Esterni (EXT): ST = straordinario   SO = sostituzione (in giallo con buono, in grigio senza).   Il totale di ognuno e\' nella colonna Buoni.',W-32); doc.text(lg,16,y); y+=3.6*(lg.length-1); }
+  { const lg=doc.splitTextToSize('Il numero in ogni casella = buoni pasto spettanti quel giorno (0 = nessun buono).   Personale esterno (EXT): le caselle vuote sono i giorni in cui non era presente a Lentini.   Il totale di ognuno e\' nella colonna Buoni.',W-32); doc.text(lg,16,y); y+=3.6*(lg.length-1); }
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
   outPdf(doc,'buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf',
     {kind:'buoni', subject:'Prospetto buoni pasto Turno '+S.turno+' \u2013 '+MESI[S.month-1]+' '+S.year,
