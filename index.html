@@ -933,7 +933,10 @@ function scBuoni(){
     extRows+='<div class="row ext"><div><div class="rn">'+esc(x.q)+' · '+esc(x.cognome+' '+x.nome)+'</div><div class="rs">'+esc(x.prov||'esterno')+' · giorni '+dl+'</div></div><div style="text-align:right"><div class="cond" style="font-weight:700;font-size:1.4rem;color:#C8102E;line-height:1">'+b+'</div><div class="rs">buoni</div></div></div>'; });
   tot+=extTot;
   let subRows=people.map(p=>{ const m=countInYear(p.id,S.year,['SD','SN']); const mm={sd:0,sn:0}; Object.keys(S.cells[p.id]||{}).forEach(d=>{ const v=S.cells[p.id][d]; if(v==='SD')mm.sd++; else if(v==='SN')mm.sn++; });
-    return '<div class="row"><div><div class="rn">'+esc(p.q)+' · '+esc((p.cognome||'')+' '+(p.nome||''))+'</div><div class="rs">'+cap1(MESI[S.month-1])+': <b>'+mm.sd+'</b> SD · <b>'+mm.sn+'</b> SN</div></div><div style="text-align:right"><div class="rs" style="font-weight:600;color:'+ctx('#1F5C99')+'">Anno '+S.year+'</div><div class="rs">'+(m?(m.SD+' SD · '+m.SN+' SN'):'calcolo…')+'</div></div></div>'; }).join('');
+    const yt=m?(m.SD+m.SN):null;
+    return '<div class="row sostrow"><div><div class="rn">'+esc(p.q)+' · '+esc((p.cognome||'')+' '+(p.nome||''))+'</div><div class="rs">'+cap1(MESI[S.month-1])+': <b>'+mm.sd+'</b> SD · <b>'+mm.sn+'</b> SN · totale <b>'+(mm.sd+mm.sn)+'</b></div></div>'
+      +'<div style="display:flex;align-items:center;gap:0.9rem"><div style="text-align:right"><div class="rs" style="font-weight:600;color:'+ctx('#1F5C99')+'">Anno '+S.year+'</div><div class="rs">'+(m?(m.SD+' SD · '+m.SN+' SN'):'calcolo…')+'</div></div>'
+      +'<div class="sosttot" style="text-align:center;min-width:3.4rem;padding:0.25rem 0.5rem;border-left:1px solid var(--line)"><div class="cond" style="font-weight:700;font-size:1.4rem;color:'+ctx('#1F5C99')+';line-height:1">'+(yt===null?'…':yt)+'</div><div class="rs">totale '+S.year+'</div></div></div></div>'; }).join('');
   return periodControls()
     +'<div class="sec-h"><span class="eyebrow">Buoni pasto — personale del turno</span></div>'+(rows||'<div class="rs">Nessuna persona.</div>')
     +(extRows?'<div class="sec-h"><span class="eyebrow">Buoni pasto — personale esterno</span></div>'+extRows:'')
@@ -941,7 +944,7 @@ function scBuoni(){
     +'<div class="note">Personale del turno: presente = 1 \u00b7 rientro in straordinario = 2 di giorno, 1 di notte \u00b7 sost. diurna = 2 \u00b7 sost. notturna = 1.<br>Esterni: straordinario = 2 di giorno (o 1, a scelta), 1 di notte \u00b7 sostituzione = 0, oppure fino a 2 di giorno e 1 di notte se assegnato.</div>'
     +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'buoni\',null,\'save\')">'+ICONS.ticket+' Genera PDF buoni pasto</button><button class="btn btn-steel" onclick="askSigner(\'buoni\',null,\'mail\')">'+ICONS.mail+' Invia per email</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Contabilità sostituzioni del personale</span></div>'
-    +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell’anno.</div>'+subRows;
+    +'<div class="cap" style="text-align:left;margin:-0.2rem 0 0.5rem">Quante sostituzioni diurne (SD) e notturne (SN) ha svolto ciascuno, nel mese e nell’anno, con il totale.</div>'+subRows;
 }
 
 /* ---------- IMPOSTAZIONI ---------- */
