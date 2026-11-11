@@ -142,10 +142,10 @@
   .btn-xs{padding:0.32rem 0.6rem;font-size:0.72rem;border-radius:6px;}
   .mt{margin-top:1.05rem;}
   .row{display:flex;justify-content:space-between;align-items:center;gap:0.5rem;border:1px solid var(--line);border-left:3px solid #C9CEC6;border-radius:8px;padding:0.6rem 0.8rem;margin-bottom:0.45rem;background:var(--paper);}
-  .row.ok{border-left-color:var(--green);} .row.ko{border-left-color:var(--fire);} .row.rec{border-left-color:#B6BBB2;opacity:0.78;} .row.ext{border-left-color:var(--amber);}
+  .row.ok{border-left-color:var(--green);} .row.sost{border-left-color:var(--steel);} .row.ko{border-left-color:var(--fire);} .row.rec{border-left-color:#B6BBB2;opacity:0.78;} .row.ext{border-left-color:var(--amber);}
   .rn{font-weight:600;font-size:0.9rem;} .rs{font-size:0.7rem;color:var(--ink2);margin-top:0.12rem;}
   .tag{font-family:'Barlow Semi Condensed';font-weight:600;text-transform:uppercase;letter-spacing:0.03em;padding:0.2rem 0.55rem;border-radius:5px;font-size:0.68rem;white-space:nowrap;}
-  .stats3{display:grid;grid-template-columns:repeat(3,1fr);gap:0.5rem;margin:0.3rem 0 1.05rem;}
+  .stats3{display:grid;grid-template-columns:repeat(4,1fr);gap:0.5rem;margin:0.3rem 0 1.05rem;}
   .stat{border:1px solid var(--line);border-radius:8px;padding:0.55rem;text-align:center;background:var(--paper2);}
   .stat .v{font-family:'Barlow Semi Condensed';font-weight:700;font-size:1.5rem;line-height:1;}
   .stat .l{font-size:0.62rem;color:var(--ink2);text-transform:uppercase;letter-spacing:0.04em;margin-top:0.2rem;}
@@ -789,15 +789,16 @@ function dayRoster(day){
 function scPresenze(){
   const wd=workingDays(engTurno(),S.year,S.month);
   if(!wd.length) return periodControls()+'<div class="note">Nessuna giornata di servizio per questo turno nel mese selezionato.</div>';
-  if(!S.curDay || !wd.find(w=>w.day===S.curDay)) S.curDay=wd[0].day;
+  if(!S.curDay || !wd.find(w=>w.day===S.curDay)) S.curDay=defaultServiceDay(wd);
   const du=dutyFor(engTurno(),S.year,S.month,S.curDay), dd=new Date(S.year,S.month-1,S.curDay);
   let dayOpts=wd.map(w=>'<option value="'+w.day+'"'+(w.day===S.curDay?' selected':'')+'>'+w.day+' '+MESI[S.month-1]+' ('+w.tipo+')</option>').join('');
-  let pres=0,ass=0,rec=0;
+  let pres=0,ass=0,rec=0,sos=0;
   let list=dayRoster(S.curDay).map(r=>{
     const note=(S.note[S.curDay]&&S.note[S.curDay][r.p.id])||'';
     let cls,tag;
     if(r.isR){ rec++; cls='rec'; tag='<span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Recupero</span>'; }
     else if(r.code==='RS'){ pres++; cls='ok'; tag='<span class="tag" style="'+chip('#FAF1D6','#876200')+'">Rientro straord.</span>'; }
+    else if(isSost(r.code)){ sos++; cls='sost'; const col=codeColor(r.code); tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">In sostituzione \u00b7 '+r.code+'</span>'; }
     else if(isAbsent(r.code)){ ass++; const col=codeColor(r.code); cls='ko'; tag='<span class="tag" style="background:'+col[0]+';color:'+col[1]+'">Assente · '+esc(r.code)+'</span>'; }
     else { pres++; cls='ok'; tag='<span class="tag" style="'+chip('#E3F1E4','#1E6B39')+'">Presente</span>'; }
     return '<div class="row '+cls+'"><div style="flex:1;min-width:0"><div class="rn">'+esc(r.p.q)+' · '+esc((r.p.cognome||'')+' '+(r.p.nome||''))+'</div>'
@@ -817,12 +818,23 @@ function scPresenze(){
   return periodControls('<div class="field" style="flex:1.4"><label class="eyebrow">Giornata</label><select onchange="S.curDay=+this.value;render()">'+dayOpts+'</select></div>')
     +'<div class="rs" style="font-size:0.78rem;margin:-0.5rem 0 0.8rem">'+WDL[dd.getDay()]+' '+S.curDay+' '+MESI[S.month-1]+' '+S.year+' · servizio '+(du.tipo==='G'?'diurno 08:00-20:00':'notturno 20:00-08:00')+' · <b>'+saltoLabel(du.salto)+'</b></div>'
     +dupWarning()
-    +'<div class="stats3"><div class="stat"><div class="v" style="color:#2C8B4B">'+pres+'</div><div class="l">Presenti</div></div><div class="stat"><div class="v" style="color:#C8102E">'+ass+'</div><div class="l">Assenti</div></div><div class="stat"><div class="v" style="color:#737A70">'+rec+'</div><div class="l">Recupero</div></div></div>'
+    +'<div class="stats3"><div class="stat"><div class="v" style="color:#2C8B4B">'+pres+'</div><div class="l">Presenti</div></div><div class="stat"><div class="v" style="color:#C8102E">'+ass+'</div><div class="l">Assenti</div></div><div class="stat"><div class="v" style="color:#737A70">'+rec+'</div><div class="l">Recupero</div></div><div class="stat"><div class="v" style="color:'+ctx('#1F5C99')+'">'+sos+'</div><div class="l">Sostituzione</div></div></div>'
     +list
     +'<div class="sec-h"><span class="eyebrow">Personale esterno presso Lentini</span></div>'+extHtml+'<button class="btn btn-out btn-full" onclick="externalModal('+S.curDay+')" style="margin-top:0.3rem">+ Aggiungi personale esterno</button>'
     +'<div class="sec-h"><span class="eyebrow">Mezzi operativi</span></div>'+mezHtml
     +'<div class="two mt"><button class="btn btn-fire" onclick="askSigner(\'pres\','+S.curDay+',\'save\')">'+ICONS.check+' Genera PDF presenze del giorno</button><button class="btn btn-steel" onclick="askSigner(\'pres\','+S.curDay+',\'mail\')">'+ICONS.mail+' Invia per email</button></div>';
 }
+// Giornata di servizio in corso: prima delle 08:00 vale ancora il notturno iniziato il giorno prima.
+// Se oggi il turno non e' di servizio, si apre la prossima giornata di servizio del mese.
+function defaultServiceDay(wd){
+  const t=new Date(Date.now()-8*3600*1000);
+  if(t.getFullYear()===S.year && t.getMonth()+1===S.month){
+    const d=t.getDate(); if(wd.find(w=>w.day===d)) return d;
+    const nx=wd.find(w=>w.day>d); return nx?nx.day:wd[wd.length-1].day;
+  }
+  return wd[0].day;
+}
+function isSost(code){ return code==='SD'||code==='SN'; }
 let _extPick=[];
 function pickExt(i){ const x=_extPick[i]||{}; const set=(id,v)=>{const e=document.getElementById(id); if(e)e.value=v||'';}; set('exQual',x.q); set('exCognome',x.cognome); set('exNome',x.nome); set('exProv',x.prov); }
 function extNbModal(day,eid){
@@ -973,7 +985,12 @@ function scSetup(){
         +[['pres','Presenze giornaliere'],['ferie','Prospetto ferie'],['buoni','Prospetto buoni pasto']].map(x=>'<label class="eyebrow" style="display:block;margin-top:0.35rem">'+x[1]+'</label><input id="em_'+x[0]+'" type="email" value="'+esc((S.emailCfg&&S.emailCfg[x[0]])||EMAIL_DEFAULT[x[0]])+'" style="width:100%;padding:0.45rem 0.55rem;border:1px solid var(--line);border-radius:7px;background:var(--paper);color:var(--ink);font-family:inherit;font-size:0.88rem;margin-top:0.2rem">').join('')
         +'<div class="rs" style="margin-top:0.4rem">Pi\u00f9 indirizzi: separali con una virgola.</div>'
         +'<button class="btn btn-out btn-xs" style="margin-top:0.55rem" onclick="saveEmails()">Salva indirizzi</button></div>')
-    +(noPicker()?'<div class="note">Su questo browser i PDF vanno nella cartella <b>Download</b>. '+FIREFOX_HINT+'</div>':'')
+    +(window.showSaveFilePicker && !isMobile()
+      ? '<div class="sec-h"><span class="eyebrow">Salvataggio PDF \u2014 solo su questo computer</span></div>'
+        +'<div class="scard"><div class="seg" id="saveMode"><button type="button" class="'+(saveModeGet()==='picker'?'on':'')+'" onclick="saveModeSet(\'picker\',this)">Scegli la cartella</button><button type="button" class="'+(saveModeGet()==='download'?'on':'')+'" onclick="saveModeSet(\'download\',this)">Download del browser</button></div>'
+        +'<div class="rs" style="margin-top:0.6rem"><b>Scegli la cartella</b>: si apre la finestra \u201cSalva con nome\u201d dell\'app. <b>Download del browser</b>: da usare sui PC dove il browser blocca le cartelle di rete (errore \u201cfile di sistema\u201d o \u201csecurity policy\u201d).</div>'
+        +(saveModeGet()==='download'?'<div class="note" style="margin-bottom:0">'+EDGE_HINT+'</div>':'')+'</div>'
+      : (noPicker()?'<div class="note">Su questo browser i PDF vanno nella cartella <b>Download</b>. '+dlHint()+'</div>':''))
     +'<div class="sec-h"><span class="eyebrow">Backup</span></div>'
     +'<div class="row"><div><div class="rn">'+(S.isAdmin?'Tutti i turni (A, B, C, D, prova)':'Turno '+esc(S.turno))+'</div><div class="rs">Salva in un file tutto: personale, codici, mezzi e tutti i mesi di tutti gli anni.</div></div><button class="btn btn-fire btn-xs" onclick="doBackup()">Esegui backup</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Fissa</span></div>';
@@ -1061,9 +1078,9 @@ document.getElementById('overlay').addEventListener('click',function(e){ if(e.ta
 // Computer (Chrome/Edge): finestra "Salva con nome" con scelta della cartella.
 // Telefono: menu Condividi (Salva su File, WhatsApp, Mail...). Altri browser: download normale.
 function isMobile(){ try{ return (navigator.maxTouchPoints>0) && window.matchMedia('(pointer:coarse)').matches; }catch(e){ return false; } }
-function toast(msg,err){
+function toast(msg,err,ms){
   const t=document.createElement('div'); t.className='toast'+(err?' err':''); t.textContent=msg; document.body.appendChild(t);
-  setTimeout(()=>{ t.remove(); },4000);
+  setTimeout(()=>{ t.remove(); },ms||4000);
 }
 function downloadBlob(blob,name){
   const url=URL.createObjectURL(blob), a=document.createElement('a');
@@ -1086,23 +1103,55 @@ async function shareOrDownload(blob,name,mime){
   if(!isMobile()) toast('PDF scaricato: '+name);
   return true;
 }
+/* Modo di salvataggio, scelto per OGNI dispositivo (Impostazioni):
+   'picker'   = finestra "Salva con nome" dell'app (Chrome/Edge su PC)
+   'download' = download normale del browser (serve dove il browser blocca le cartelle di rete) */
+function saveModeGet(){ try{ return localStorage.getItem('vvfSaveMode')==='download'?'download':'picker'; }catch(e){ return 'picker'; } }
+function saveModeSet(m,el){ try{ if(m==='download') localStorage.setItem('vvfSaveMode','download'); else localStorage.removeItem('vvfSaveMode'); }catch(e){} if(el) segOn(el); render(); }
+function usePicker(){ return !!window.showSaveFilePicker && !isMobile() && saveModeGet()!=='download'; }
+// Salvataggio annullato nella finestra: per qualche secondo offro il download normale (es. cartella bloccata dal browser)
+function offerDownload(getBlob,name,mime){
+  return new Promise(res=>{
+    document.querySelectorAll('.toast.offer').forEach(x=>x.remove());
+    const t=document.createElement('div'); t.className='toast offer';
+    t.innerHTML='<div>Salvataggio annullato. La cartella era bloccata dal browser?</div><div style="display:flex;gap:0.45rem;margin-top:0.5rem;flex-wrap:wrap"><button type="button" class="btn btn-fire btn-xs" data-a="dl">Scarica con il download normale</button><button type="button" class="btn btn-out btn-xs" data-a="no" style="background:transparent;color:#fff;border-color:rgba(255,255,255,0.45)">Chiudi</button></div>';
+    let done=false; const end=v=>{ if(done) return; done=true; t.remove(); res(v); };
+    t.addEventListener('click',async e=>{ const a=e.target.closest('button'); if(!a) return;
+      if(a.dataset.a!=='dl') return end(false);
+      try{ const blob=await getBlob(); downloadBlob(blob,name); toast((/\.pdf$/i.test(name)?'PDF':'File')+' scaricato con il download del browser: '+name); end(true); }
+      catch(err){ console.error(err); toast('Salvataggio non riuscito: '+(err&&err.message||err),true); end(false); } });
+    document.body.appendChild(t); setTimeout(()=>end(false),12000);
+  });
+}
 // getBlob puo' essere asincrono (backup): la finestra si apre SUBITO al tocco, i dati si preparano dopo
 async function saveOut(name,mime,ext,desc,getBlob){
-  if(window.showSaveFilePicker && !isMobile()){
+  if(usePicker()){
     let h=null;
     try{ const acc={}; acc[mime]=[ext]; h=await window.showSaveFilePicker({suggestedName:name,types:[{description:desc,accept:acc}]}); }
-    catch(e){ if(e && e.name==='AbortError') return false; h=null; }
+    catch(e){ if(e && e.name==='AbortError') return await offerDownload(getBlob,name,mime); h=null; }
     if(h){
-      try{ const blob=await getBlob(); const w=await h.createWritable(); await w.write(blob); await w.close(); toast('Salvato: '+h.name); return true; }
-      catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
+      let blob=null;
+      try{ blob=await getBlob(); const w=await h.createWritable(); await w.write(blob); await w.close(); toast('Salvato: '+h.name); return true; }
+      catch(e){
+        console.error(e);
+        if(!blob){ toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
+        // Il browser ha bloccato la scrittura in quella cartella (es. cartella di rete): tolgo il file vuoto e scarico normalmente
+        try{ if(h.remove) await h.remove(); }catch(_){}
+        downloadBlob(blob,name);
+        toast('Il browser non permette di salvare in quella cartella: '+(/\.pdf$/i.test(name)?'PDF':'file')+' scaricato con il download normale. Per evitarlo: Impostazioni \u2192 Salvataggio PDF \u2192 Download del browser.',true,9000);
+        return true;
+      }
     }
   }
   try{ const blob=await getBlob(); return await shareOrDownload(blob,name,mime); }
   catch(e){ console.error(e); toast('Salvataggio non riuscito: '+(e&&e.message||e),true); return false; }
 }
 function savePdf(doc,name){ return saveOut(name,'application/pdf','.pdf','Documento PDF',()=>doc.output('blob')); }
-function noPicker(){ return !window.showSaveFilePicker && !isMobile(); } // es. Firefox su PC
+function noPicker(){ return !usePicker() && !isMobile(); } // download normale su PC (Firefox, o scelto in Impostazioni)
+function isFirefox(){ return /firefox/i.test(navigator.userAgent); }
 const FIREFOX_HINT='Per scegliere ogni volta la cartella, in Firefox: <b>Impostazioni \u2192 Generale \u2192 Download \u2192 \u201cChiedi sempre dove salvare i file\u201d</b>.';
+const EDGE_HINT='Per scegliere ogni volta la cartella: in Edge <b>Impostazioni \u2192 Download \u2192 \u201cChiedi dove salvare ogni file prima di scaricarlo\u201d</b>; in Chrome <b>Impostazioni \u2192 Download \u2192 \u201cChiedi dove salvare il file prima di scaricarlo\u201d</b>.';
+function dlHint(){ return isFirefox()?FIREFOX_HINT:EDGE_HINT; }
 
 /* PDF: si salva SEMPRE prima (scegliendo la cartella); con "Invia per email" poi si prepara l'email */
 async function outPdf(doc,name,mail){
@@ -1133,11 +1182,11 @@ function mailModal(){
   }
   openModal('<h3>Invia per email</h3><div class="ms">PDF salvato: <b>'+esc(m.name)+'</b></div>'
     +'<ol class="steps"><li>Premi <b>Apri l\'email</b>: si apre il programma di posta (es. Thunderbird) con destinatario, oggetto e testo gi\u00e0 scritti.</li>'
-    +'<li><b>Trascina il PDF</b> nell\'email'+(noPicker()?' dalla freccia dei download in alto a destra di Firefox':' dalla cartella dove l\'hai salvato')+'.</li><li>Premi <b>Invia</b>.</li></ol>'
+    +'<li><b>Trascina il PDF</b> nell\'email'+(noPicker()?' dalla freccia dei download in alto a destra del browser (o dalla cartella dove l\'hai salvato)':' dalla cartella dove l\'hai salvato')+'.</li><li>Premi <b>Invia</b>.</li></ol>'
     +toField
     +'<button class="btn btn-steel btn-full" style="margin-top:0.8rem" onclick="sendMail()">'+ICONS.mail+' Apri l\'email</button>'
     +'<button class="btn btn-out btn-full" style="margin-top:0.45rem" onclick="copyMail()">Copia destinatario, oggetto e testo</button>'
-    +'<div class="hint" style="margin-top:0.5rem">Se non si apre nessun programma di posta, usa \u201cCopia\u201d e incolla in un\'email nuova.'+(noPicker()?' '+FIREFOX_HINT:'')+'</div>');
+    +'<div class="hint" style="margin-top:0.5rem">Se non si apre nessun programma di posta, oppure Thunderbird chiede di creare un nuovo account, chiudi quella finestra e usa \u201cCopia\u201d: poi incolla in un messaggio nuovo dal tuo account.'+(noPicker()?' '+dlHint():'')+'</div>');
 }
 function openMailto(u){ const a=document.createElement('a'); a.href=u; a.style.display='none'; document.body.appendChild(a); a.click(); a.remove(); }
 function sendMail(){
@@ -1211,13 +1260,18 @@ function isCapo(p){ return ['CR','CSE','CS'].indexOf(p.q)>=0; }
 // Per il PDF del giorno compare solo chi e' presente quel giorno (non in salto, non assente).
 function askSigner(kind,arg,mode){
   if(!window.jspdf){ alert('Il modulo PDF non \u00e8 ancora caricato. Controlla la connessione e riprova.'); return; }
-  let pool=personArr();
-  if(kind==='pres'){ const pr=dayRoster(arg).filter(r=>!r.isR && !isAbsent(r.code)).map(r=>r.p); if(pr.length) pool=pr; }
+  const extP=x=>({id:'ext',q:x.q||'',cognome:x.cognome||'',nome:x.nome||'',prov:x.prov||'',ext:true});
+  let pool;
+  if(kind==='pres'){
+    pool=dayRoster(arg).filter(r=>!r.isR && !isAbsent(r.code) && !isSost(r.code)).map(r=>r.p)
+      .concat(Object.values(S.esterni[arg]||{}).map(extP));
+  } else pool=personArr().concat(esterniRows().map(extP));
+  if(!pool.length) pool=personArr();
   if(!pool.length){ alert('Aggiungi prima il personale in Impostazioni.'); return; }
   const cs=pool.filter(isCapo), others=pool.filter(p=>!isCapo(p));
   _signerList=cs.concat(others); _pendingPdf={kind,arg,mode:mode||'save'};
-  const btn=(p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+'</button>';
-  let html='<h3>Chi firma il documento?</h3><div class="ms">'+(kind==='pres'?'Personale presente il '+arg+' '+MESI[S.month-1]:'Personale del turno')+'</div>';
+  const btn=(p,i)=>'<button class="btn btn-out btn-full" style="margin-bottom:0.45rem;justify-content:flex-start" onclick="doSign('+i+')"><span class="pq" style="margin-right:0.55rem">'+esc(p.q)+'</span>'+esc((p.cognome||'')+' '+(p.nome||''))+(p.ext?'<span class="rs" style="margin:0 0 0 auto;text-transform:none">esterno'+(p.prov?' \u00b7 '+esc(p.prov):'')+'</span>':'')+'</button>';
+  let html='<h3>Chi firma il documento?</h3><div class="ms">'+(kind==='pres'?'Personale presente il '+arg+' '+MESI[S.month-1]+', compreso quello esterno':'Personale del turno e personale esterno del mese')+'</div>';
   if(cs.length) html+='<div class="eyebrow" style="margin:0 0 0.35rem">Capo squadra</div>'+cs.map((p,i)=>btn(p,i)).join('');
   else html+='<div class="note" style="margin:0 0 0.7rem">'+(kind==='pres'?'Nessun capo squadra presente oggi':'Nessun capo squadra nel turno')+': pu\u00f2 firmare un altro vigile.</div>';
   if(others.length) html+='<div class="eyebrow" style="margin:'+(cs.length?'0.8rem':'0')+' 0 0.35rem">'+(cs.length?'In assenza del capo squadra':'Altro personale')+'</div>'+others.map((p,j)=>btn(p,cs.length+j)).join('');
@@ -1237,10 +1291,11 @@ function pdfPresenze(day,signer){
   const {jsPDF}=window.jspdf; const doc=new jsPDF('p','mm','a4'); const W=210;
   const du=dutyFor(engTurno(),S.year,S.month,day), dd=new Date(S.year,S.month-1,day);
   pdfHeader(doc,'PROSPETTO PRESENZE - TURNO '+S.turno, SEDE+'  -  '+WDL[dd.getDay()]+' '+day+' '+MESI[S.month-1]+' '+S.year+'  -  servizio '+(du.tipo==='G'?'diurno 08:00 / 20:00':'notturno 20:00 / 08:00'),W);
-  let body=[],pres=0,ass=0,rec=0;
+  let body=[],pres=0,ass=0,rec=0,sos=0;
   dayRoster(day).forEach(r=>{ let note=(S.note[day]&&S.note[day][r.p.id])||''; let p_,a_;
     if(r.isR){ p_=''; a_='RECUPERO'; rec++; }
     else if(r.code==='RS'){ p_='SI'; a_=''; pres++; note=note?('rientro straordinario - '+note):'rientro straordinario'; }
+    else if(isSost(r.code)){ p_=''; a_='SOSTITUZIONE '+(r.code==='SD'?'DIURNA':'NOTTURNA'); sos++; }
     else if(isAbsent(r.code)){ p_=''; a_=codeLabel(r.code).toUpperCase(); ass++; }
     else { p_='SI'; a_=''; pres++; }
     body.push([r.p.q,(r.p.cognome||'')+' '+(r.p.nome||''),p_,a_,note]); });
@@ -1253,7 +1308,7 @@ function pdfPresenze(day,signer){
     columnStyles:{0:{halign:'center',cellWidth:22},1:{cellWidth:56},2:{halign:'center',cellWidth:20,fontStyle:'bold'},3:{cellWidth:40},4:{textColor:[91,99,110]}} });
   let y=doc.lastAutoTable.finalY+5;
   doc.setFontSize(9); doc.setTextColor(16,21,30); doc.setFont('helvetica','normal');
-  doc.text('Totale presenti: '+pres+'      Totale assenti: '+ass+'      In recupero: '+rec,16,y); y+=7;
+  doc.text('Totale presenti: '+pres+'      Totale assenti: '+ass+'      In recupero: '+rec+'      In sostituzione: '+sos,16,y); y+=7;
   const mezzi=S.mezzi||{}, mop=(S.mezziOp&&S.mezziOp[day])||{};
   if(Object.keys(mezzi).length){ doc.setFont('helvetica','bold'); doc.setFontSize(9); doc.text('ELENCO DEI MEZZI OPERATIVI',16,y); y+=2;
     let mb=Object.keys(mezzi).map(id=>{ const op=!(mop[id]&&mop[id].op===false); return [mezzi[id].nome||'',op?'SI':'NO',op?'':'non operativo']; });
@@ -1310,12 +1365,12 @@ function pdfBuoni(signer){
             ['Personale'].concat(wd.map(c=>c.day+'\n'+WDS[c.wd]+'\n'+c.tipo)).concat(['Buoni'])];
   let body=[], meta={}, totTurno=0;
   people.forEach(function(p){ const ri=body.length; let row=[p.q+' '+nomeBreve(p)]; let tot=0;
-    wd.forEach(function(c,ci){ const b=buonoCella(p,c); tot+=b.val; meta[ri+'_'+(ci+1)]=b.show; row.push(b.show); });
+    wd.forEach(function(c,ci){ const b=buonoCella(p,c); tot+=b.val; meta[ri+'_'+(ci+1)]=b.show; row.push(b.val>0 ? (b.show ? b.show+' '+b.val : String(b.val)) : b.show); });
     row.push(String(tot)); totTurno+=tot; body.push(row); });
   const nPers=body.length;
   esterniRows().forEach(function(x){ const ri=body.length; const bt=esternoBuoni(x);
     let row=['EXT '+x.q+' '+nomeBreve(x)];
-    wd.forEach(function(c,ci){ const mot=x.days[c.day], nb=x.nb[c.day]||0; const show=mot?((mot==='Straordinario'?'ST':'SO')+(nb===2?'2':'')):''; meta[ri+'_'+(ci+1)]=show?(nb>0?'EXTY':'EXTG'):''; row.push(show); });
+    wd.forEach(function(c,ci){ const mot=x.days[c.day], nb=x.nb[c.day]||0; const show=mot?((mot==='Straordinario'?'ST':'SO')+(nb>0?' '+nb:'')):''; meta[ri+'_'+(ci+1)]=show?(nb>0?'EXTY':'EXTG'):''; row.push(show); });
     row.push(String(bt)); totTurno+=bt; body.push(row); });
   const cs={0:{halign:'left',cellWidth:44,fontSize:8}}; cs[last+1]={halign:'center',fontStyle:'bold',cellWidth:14,fillColor:[252,235,238],textColor:[200,16,46],fontSize:9};
   doc.autoTable({ startY:38, head:head, body:body, theme:'grid',
@@ -1337,7 +1392,7 @@ function pdfBuoni(signer){
   doc.setFont('helvetica','bold'); doc.setFontSize(10); doc.setTextColor(16,21,30); doc.text('TOTALE BUONI PASTO TURNO '+S.turno,18,y+6);
   doc.setFontSize(13); doc.setTextColor(200,16,46); doc.text(String(totTurno),W-20,y+6.5,{align:'right'}); y+=14;
   doc.setFont('helvetica','normal'); doc.setFontSize(7.5); doc.setTextColor(91,99,110);
-  { const lg=doc.splitTextToSize('Personale: vuoto = presente (1)   RS = rientro straordinario (2 diurno, 1 notturno)   SD = sost. diurna (2)   SN = sost. notturna (1)   R = recupero (0)   sigle assenza (0).    Esterni (EXT): ST = straordinario   SO = sostituzione   (il 2 accanto alla sigla = 2 buoni; in giallo con buono, in grigio senza; il totale e\' nella colonna Buoni).',W-32); doc.text(lg,16,y); y+=3.6*(lg.length-1); }
+  { const lg=doc.splitTextToSize('Il numero in ogni casella = buoni pasto di quel giorno.   Personale: 1 = presente   RS = rientro in straordinario   SD = sostituzione diurna   SN = sostituzione notturna   R = recupero e sigle di assenza = nessun buono.    Esterni (EXT): ST = straordinario   SO = sostituzione (in giallo con buono, in grigio senza).   Il totale di ognuno e\' nella colonna Buoni.',W-32); doc.text(lg,16,y); y+=3.6*(lg.length-1); }
   pdfSign(doc,LUOGO+', '+MESI[S.month-1]+' '+S.year,W,y+11,signer);
   outPdf(doc,'buoni_pasto_'+S.turno+'_'+S.year+'-'+String(S.month).padStart(2,'0')+'.pdf',
     {kind:'buoni', subject:'Prospetto buoni pasto Turno '+S.turno+' \u2013 '+MESI[S.month-1]+' '+S.year,
