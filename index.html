@@ -293,6 +293,7 @@ const ICONS={
  sliders:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><line x1="4" y1="8" x2="20" y2="8"/><line x1="4" y1="16" x2="20" y2="16"/><circle cx="9" cy="8" r="2.3" fill="currentColor" stroke="none"/><circle cx="15" cy="16" r="2.3" fill="currentColor" stroke="none"/></svg>',
  mail:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 7l9 6 9-6"/></svg>',
  edit:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
+ download:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>',
  trash:'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><polyline points="3 6 5 6 21 6"/><path d="M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/><path d="M10 11v6M14 11v6"/></svg>'
 };
 
@@ -994,7 +995,9 @@ function scSetup(){
         +'<div class="rs" style="margin-top:0.6rem"><b>Scegli la cartella</b>: si apre la finestra \u201cSalva con nome\u201d dell\'app. <b>Download del browser</b>: da usare sui PC dove il browser blocca le cartelle di rete (errore \u201cfile di sistema\u201d o \u201csecurity policy\u201d).</div>'
         +(saveModeGet()==='download'?'<div class="note" style="margin-bottom:0">'+EDGE_HINT+'</div>':'')+'</div>'
       : (noPicker()?'<div class="note">Su questo browser i PDF vanno nella cartella <b>Download</b>. '+dlHint()+'</div>':''))
-    +'<div class="sec-h"><span class="eyebrow">Backup</span></div>'
+    +'<div class="sec-h"><span class="eyebrow">Backup automatici \u2014 ogni giorno alle 9 e alle 21</span></div>'
+    +bkPanel()
+    +'<div class="sec-h"><span class="eyebrow">Backup su file</span></div>'
     +'<div class="row"><div><div class="rn">'+(S.isAdmin?'Tutti i turni (A, B, C, D, prova)':'Turno '+esc(S.turno))+'</div><div class="rs">Salva in un file tutto: personale, codici, mezzi e tutti i mesi di tutti gli anni.</div></div><button class="btn btn-fire btn-xs" onclick="doBackup()">Esegui backup</button></div>'
     +'<div class="sec-h"><span class="eyebrow">Sede</span></div><div class="row"><span class="rn">'+esc(SEDE)+'</span><span class="tag" style="'+chip('#EDEFEA','#737A70')+'">Fissa</span></div>';
 }
@@ -1233,6 +1236,247 @@ function doBackup(){
     }
     return new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
   });
+}
+
+/* ======================= BACKUP AUTOMATICI (Worker Cloudflare "presenze-backup") =======================
+   Il Worker salva da solo una copia dei turni A-B-C-D alle 9 e alle 21 (vedi GUIDA-BACKUP.md).
+   Qui: stato dell'ultimo backup, backup immediato, elenco per mese, scarica e ripristina.
+   Ripristino: ogni turno solo il proprio; l'admin qualsiasi turno (anche dentro PROVA per provare).
+   Prima di ogni ripristino il Worker salva una copia "prima del ripristino" dello stato attuale. */
+const BACKUP_URL = 'https://presenze-backup.lucalagan.workers.dev';
+const BK_START = '2026-11';                       // primo mese con backup automatici
+const BK_KIND = { auto:'automatico', man:'manuale', pre:'prima del ripristino' };
+const BK = { st:null, stAt:0, stLoading:false, stErr:'', month:'', items:null, itemsErr:'', listLoading:false, sel:'', tsel:'', dest:'orig', busy:false, running:false, runAt:0 };
+
+function bkRealTurno(){ return /^[ABCD]$/.test(S.turno||'') ? S.turno : ''; }
+function bkFmt(ts){ const m=String(ts||'').match(/^(\d{4})-(\d{2})-(\d{2}) (\d{2}):(\d{2})/); return m ? (m[3]+'/'+m[2]+'/'+m[1]+' ore '+m[4]+':'+m[5]) : String(ts||''); }
+function bkMonthLabel(m){ const p=m.split('-'); return cap1(MESI[+p[1]-1])+' '+p[0]; }
+function bkMonths(){
+  const out=[], now=new Date(), sp=BK_START.split('-').map(Number);
+  let y=now.getFullYear(), m=now.getMonth()+1;
+  while((y>sp[0] || (y===sp[0] && m>=sp[1])) && out.length<600){ out.push(y+'-'+String(m).padStart(2,'0')); m--; if(!m){ m=12; y--; } }
+  return out.length ? out : [BK_START];
+}
+async function bkApi(path, body){
+  if(!auth || !auth.currentUser) throw new Error('Accesso scaduto: chiudi e riapri l\'app.');
+  const tok=await auth.currentUser.getIdToken();
+  const ctl=(typeof AbortController!=='undefined')?new AbortController():null;
+  const tm=setTimeout(()=>{ if(ctl) ctl.abort(); },45000);
+  let r;
+  try{
+    r=await fetch(BACKUP_URL+path,{ method:body?'POST':'GET', cache:'no-store', signal:ctl?ctl.signal:undefined,
+      headers:Object.assign({'Authorization':'Bearer '+tok}, body?{'Content-Type':'application/json'}:{}), body:body?JSON.stringify(body):undefined });
+  }catch(e){ throw new Error(e&&e.name==='AbortError' ? 'Il servizio backup non risponde (tempo scaduto). Riprova tra poco.' : 'Servizio backup non raggiungibile: controlla la connessione.'); }
+  finally{ clearTimeout(tm); }
+  const txt=await r.text();
+  if(!r.ok){ let msg=''; try{ msg=JSON.parse(txt).error; }catch(_){} throw new Error(msg || ('Errore del servizio backup ('+r.status+').')); }
+  return txt;
+}
+async function bkJson(path, body){ return JSON.parse(await bkApi(path, body)); }
+function bkMonthOf(stamp){ return String(stamp).slice(0,4)+'-'+String(stamp).slice(4,6); }
+function bkAddItems(stamp, items){
+  if(!BK.items || BK.month!==bkMonthOf(stamp)) return;
+  const have={}; BK.items.forEach(i=>have[i.key]=1);
+  BK.items=BK.items.concat((items||[]).filter(i=>!have[i.key]));
+}
+function bkLoadStatus(force){
+  if(BK.stLoading) return;
+  if(!force && BK.stAt && Date.now()-BK.stAt<120000) return;
+  BK.stLoading=true;
+  bkJson('/status').then(j=>{ BK.st=j; BK.stErr=''; }, e=>{ BK.stErr=e.message; })
+    .then(()=>{ BK.stLoading=false; BK.stAt=Date.now(); if(S.tab===4) render(); });
+}
+function bkLoadList(){
+  const m=BK.month; if(!m) return;
+  BK.listLoading=true;
+  bkJson('/list?month='+m).then(j=>{ if(BK.month!==m) return; BK.items=j.items||[]; BK.itemsErr=''; },
+                                e=>{ if(BK.month!==m) return; BK.items=null; BK.itemsErr=e.message; })
+    .then(()=>{ if(BK.month===m) BK.listLoading=false; if(S.tab===4) render(); });
+}
+function bkSetMonth(m){ BK.month=m; BK.items=null; BK.itemsErr=''; BK.sel=''; BK.tsel=''; BK.dest='orig'; bkLoadList(); render(); }
+function bkGroups(){
+  const g={};
+  (BK.items||[]).forEach(it=>{ const p=String(it.key).split(':'); if(p.length!==3) return;
+    (g[p[1]]=g[p[1]]||{stamp:p[1], ts:it.ts, k:it.k, by:it.by, t:{}}).t[p[2]]=it; });
+  let arr=Object.keys(g).map(k=>g[k]).sort((a,b)=>a.stamp<b.stamp?1:-1);
+  if(!S.isAdmin){ const T=bkRealTurno(); arr=arr.filter(x=>x.t[T]); }
+  return arr;
+}
+function bkCur(){ return bkGroups().find(x=>x.stamp===BK.sel)||null; }
+function bkLabel(g){ return bkFmt(g.ts)+' · '+(BK_KIND[g.k]||g.k)+(g.k!=='auto'&&g.by?' ('+g.by+')':''); }
+function bkTsel(g){
+  if(!S.isAdmin) return bkRealTurno();
+  if(BK.tsel==='ALL' || (BK.tsel && g.t[BK.tsel])) return BK.tsel;
+  if(g.t[S.turno]) return S.turno;
+  return ['A','B','C','D'].find(T=>g.t[T])||'';
+}
+function bkSources(g){
+  const ts=bkTsel(g);
+  if(ts==='ALL') return ['A','B','C','D'].filter(T=>g.t[T]&&!g.t[T].e).map(T=>({T:T, item:g.t[T]}));
+  return (ts && g.t[ts]) ? [{T:ts, item:g.t[ts]}] : [];
+}
+function bkToProva(src){ return S.isAdmin && BK.dest==='prova' && src.length===1; }
+
+function bkPanel(){
+  setTimeout(()=>bkLoadStatus(false),0);
+  if(!BK.month){ BK.month=bkMonths()[0]; setTimeout(bkLoadList,0); BK.listLoading=true; }
+  let st;
+  if(BK.stErr) st='<div class="warn" style="margin:0 0 0.5rem">'+esc(BK.stErr)+(S.isAdmin?'<br>Controlla il Worker <b>presenze-backup</b> su Cloudflare (vedi GUIDA-BACKUP).':'')+'</div>';
+  else if(!BK.st) st='<div class="rs" style="margin-bottom:0.5rem">Controllo l\'ultimo backup…</div>';
+  else {
+    const L=BK.st.last, O=BK.st.lastOk;
+    if(!L) st='<div class="rs" style="margin-bottom:0.5rem">Nessun backup automatico ancora: il primo arriva alle 9 o alle 21.</div>';
+    else if(L.ok) st='<div class="rs" style="margin-bottom:0.5rem"><b style="color:'+ctx('#2E7D32')+'">✓</b> Ultimo backup automatico: <b>'+esc(bkFmt(L.ts))+'</b> · turni '+esc((L.turni||[]).join(', '))+'</div>';
+    else st='<div class="warn" style="margin:0 0 0.5rem"><b>Ultimo backup automatico NON riuscito</b> ('+esc(bkFmt(L.ts))+'): '+esc(L.error||'')+(O?'<br>Ultimo riuscito: <b>'+esc(bkFmt(O.ts))+'</b>':'')+'</div>';
+  }
+  const runLbl=S.isAdmin?'Esegui backup adesso (tutti i turni)':'Esegui backup adesso (turno '+esc(S.turno)+')';
+  let h='<div class="scard" id="bkPanel">'+st
+    +'<button class="btn btn-out btn-xs" id="bkRun" onclick="bkRunNow()"'+(BK.running?' disabled':'')+'>'+(BK.running?'Backup in corso…':runLbl)+'</button>'
+    +'<div style="border-top:1px solid var(--line);margin:0.75rem 0 0.6rem"></div>'
+    +'<div class="rn" style="margin-bottom:0.45rem">Recupera backup</div>'
+    +'<div class="ctl-row" style="margin-bottom:0.5rem"><div class="field"><label class="eyebrow">Mese</label><select id="bkMonth" onchange="bkSetMonth(this.value)">'
+    +bkMonths().map(m=>'<option value="'+m+'"'+(m===BK.month?' selected':'')+'>'+bkMonthLabel(m)+'</option>').join('')+'</select></div>';
+  const groups=bkGroups();
+  if(BK.listLoading && !BK.items) h+='</div><div class="rs">Carico l\'elenco dei backup…</div>';
+  else if(BK.itemsErr) h+='</div><div class="warn" style="margin:0">'+esc(BK.itemsErr)+'</div>';
+  else if(!groups.length) h+='</div><div class="rs">Nessun backup'+(S.isAdmin?'':' del turno '+esc(S.turno))+' in '+bkMonthLabel(BK.month).toLowerCase()+'.</div>';
+  else {
+    h+='<div class="field" style="flex:2;min-width:220px"><label class="eyebrow">Backup del</label><select id="bkSel" onchange="BK.sel=this.value;BK.tsel=\'\';BK.dest=\'orig\';render()"><option value="">— scegli data e ora —</option>'
+      +groups.map(g=>'<option value="'+g.stamp+'"'+(g.stamp===BK.sel?' selected':'')+'>'+esc(bkLabel(g))+'</option>').join('')+'</select></div></div>';
+    const g=bkCur();
+    if(g){
+      const ts=bkTsel(g);
+      if(S.isAdmin){
+        const avail=['A','B','C','D'].filter(T=>g.t[T]), full=avail.filter(T=>!g.t[T].e);
+        h+='<div class="ctl-row" style="margin-bottom:0.5rem"><div class="field"><label class="eyebrow">Turno da recuperare</label><select id="bkTurno" onchange="BK.tsel=this.value;if(this.value===\'ALL\')BK.dest=\'orig\';render()">'
+          +avail.map(T=>'<option value="'+T+'"'+(T===ts?' selected':'')+'>Turno '+T+(g.t[T].e?' (copia vuota)':'')+'</option>').join('')
+          +(full.length>1?'<option value="ALL"'+(ts==='ALL'?' selected':'')+'>Tutti i turni della copia</option>':'')+'</select></div>';
+        if(ts!=='ALL') h+='<div class="field" style="flex:2;min-width:220px"><label class="eyebrow">Dove ripristinare</label><select id="bkDest" onchange="BK.dest=this.value;render()">'
+          +'<option value="orig"'+(BK.dest!=='prova'?' selected':'')+'>Nel turno '+esc(ts)+' (dati veri)</option>'
+          +'<option value="prova"'+(BK.dest==='prova'?' selected':'')+'>Nel turno PROVA (per controllare, senza toccare i dati veri)</option></select></div>';
+        h+='</div>';
+      }
+      const src=bkSources(g), kb=src.reduce((a,x)=>a+(x.item.b||0),0)/1024;
+      h+='<div class="rs" style="margin-bottom:0.55rem">Copia del <b>'+esc(bkFmt(g.ts))+'</b> · '+(src.length?('turno '+src.map(x=>x.T).join(', ')+' · '+(kb<1?'<1':Math.round(kb))+' kB'):'nessun turno')+(src.some(x=>x.item.e)?' · <b>copia vuota</b>':'')+'</div>'
+        +'<div class="two"><button class="btn btn-out" onclick="bkDownload()">'+ICONS.download+' Scarica copia</button>'
+        +'<button class="btn btn-fire" id="bkGo" onclick="bkRestoreAsk()">Ripristina</button></div>';
+    }
+  }
+  if(S.isAdmin) h+='<div style="margin-top:0.7rem"><button class="btn btn-out btn-xs" onclick="bkLogModal()">Registro dei ripristini</button></div>';
+  h+='<div class="rs" style="margin-top:0.6rem">Le copie restano 5 anni; quella del giorno 1 di ogni mese resta per sempre. '
+    +(S.isAdmin?'Puoi ripristinare qualsiasi turno.':'Ogni turno può ripristinare solo il proprio.')+'</div></div>';
+  return h;
+}
+
+function bkRunNow(){
+  if(BK.running) return;
+  if(Date.now()-BK.runAt<20000){ toast('Attendi qualche secondo prima di un altro backup.'); return; }
+  const turni=S.isAdmin?['A','B','C','D']:[bkRealTurno()].filter(Boolean);
+  if(!turni.length) return;
+  BK.running=true; BK.runAt=Date.now(); render();
+  bkJson('/run',{turni:turni, kind:'man', da:bkRealTurno()})
+    .then(j=>{ toast('Backup eseguito: '+bkFmt(j.ts)); bkAddItems(j.stamp, j.items); },
+          e=>{ BK.runAt=0; alert('Backup NON eseguito: '+e.message); })
+    .then(()=>{ BK.running=false; render(); });
+}
+
+function bkDownload(){
+  const g=bkCur(); if(!g) return;
+  const src=bkSources(g); if(!src.length){ alert('Scegli il turno.'); return; }
+  const name='backup_'+g.stamp.slice(0,8)+'_'+g.stamp.slice(9,13)+'_turno'+src.map(x=>x.T).join('')+'.json';
+  return saveOut(name,'application/json','.json','Backup presenze (JSON)',async function(){
+    const out={};
+    for(const x of src) out[x.T]=JSON.parse(await bkApi('/get?key='+encodeURIComponent(x.item.key)));
+    const data = src.length===1 ? out[src[0].T] : out;
+    return new Blob([JSON.stringify(data,null,1)],{type:'application/json'});
+  });
+}
+
+function bkRestoreAsk(){
+  const g=bkCur(); if(!g) return;
+  const src=bkSources(g);
+  if(!src.length){ alert('Scegli il turno da ripristinare.'); return; }
+  const empty=src.filter(x=>x.item.e).map(x=>x.T);
+  if(empty.length){ alert('La copia del turno '+empty.join(', ')+' di quel momento è vuota: non si può ripristinare. Scegli un\'altra data.'); return; }
+  if(!S.isAdmin && src.some(x=>x.T!==bkRealTurno())){ alert('Puoi ripristinare solo il turno '+S.turno+'.'); return; }
+  if(S.conn==='off'){ alert('Sei offline: il ripristino si può fare solo con la connessione attiva.'); return; }
+  const names=src.map(x=>x.T).join(', '), when=bkFmt(g.ts), prova=bkToProva(src);
+  const txt = prova
+    ? 'La copia del <b>turno '+names+'</b> del <b>'+when+'</b> viene caricata nel <b>turno PROVA</b>.<br><br>I dati veri dei turni <b>non vengono toccati</b>. Poi scegli <b>PROVA</b> in alto per controllarla.'
+    : (src.length>1?'I <b>turni '+names+'</b> tornano esattamente com\'erano':'Il <b>turno '+names+'</b> torna esattamente com\'era')+' il <b>'+when+'</b>.<br><br>'
+      +'Tutto quello che è stato scritto <b>dopo</b> per '+(src.length>1?'questi turni':'il turno '+names)+' viene sostituito.<br><br>'
+      +'Prima di farlo salvo da solo una <b>copia di com\'è adesso</b>: se ti accorgi di aver sbagliato data, ripristini quella copia (nell\'elenco è indicata come “prima del ripristino”).';
+  openModal('<h3>Ripristinare il backup?</h3><div class="ms" style="font-size:0.84rem;line-height:1.45;color:var(--ink)">'+txt+'</div>'
+    +'<div class="two"><button class="btn btn-out" onclick="closeModal()">Annulla</button><button class="btn btn-fire" id="bkConfirm" onclick="bkRestoreGo()">'+(prova?'Sì, carica in PROVA':'Sì, ripristina')+'</button></div>');
+}
+
+function bkWrite(path, v){
+  S.pending++; updSync();
+  const p=db.ref(path).set(v);
+  const t=new Promise((_,rej)=>setTimeout(()=>rej(new Error('Firebase non ha confermato il salvataggio entro 60 secondi: controlla la connessione.')),60000));
+  return Promise.race([p,t]).finally(()=>{ S.pending=Math.max(0,S.pending-1); updSync(); });
+}
+
+async function bkRestoreGo(){
+  if(BK.busy) return;
+  const g=bkCur(); if(!g){ closeModal(); return; }
+  const src=bkSources(g), prova=bkToProva(src), when=bkFmt(g.ts), done=[];
+  BK.busy=true;
+  openModal('<h3>Ripristino in corso…</h3><div class="ms" id="bkStep" style="font-size:0.84rem">Scarico la copia…</div><div class="rs">Non chiudere la pagina.</div>');
+  const step=t=>{ const el=document.getElementById('bkStep'); if(el) el.textContent=t; };
+  let pre=null;
+  try{
+    // 1) scarico e controllo TUTTE le copie prima di toccare qualsiasi dato
+    const datas={};
+    for(const x of src){
+      step('Scarico la copia del turno '+x.T+'…');
+      let v=null; try{ v=JSON.parse(await bkApi('/get?key='+encodeURIComponent(x.item.key))); }catch(e){ if(/JSON/.test(e.message)) v=null; else throw e; }
+      if(!v || typeof v!=='object' || Array.isArray(v) || !(v.personale || v.anno)) throw new Error('La copia del turno '+x.T+' non contiene dati validi.');
+      datas[x.T]=v;
+    }
+    // 2) copia di sicurezza dello stato attuale (se non riesce, mi fermo: nessun dato toccato)
+    if(!prova){
+      step('Salvo una copia di sicurezza di com\'è adesso…');
+      try{ pre=await bkJson('/run',{turni:src.map(x=>x.T), kind:'pre', da:bkRealTurno()}); }
+      catch(e){ throw new Error('Non sono riuscito a salvare la copia di sicurezza ('+e.message+').'); }
+    }
+    // 3) scrittura
+    for(const x of src){
+      const dest=prova?'PROVA':x.T;
+      step('Ripristino il turno '+dest+'…');
+      await bkWrite('turni/'+dest, datas[x.T]);
+      done.push(dest);
+    }
+    // 4) registro (se non riesce, il ripristino resta valido)
+    for(const x of src){ try{ await bkJson('/log',{turno:x.T, verso:prova?'PROVA':x.T, copia:g.ts, copiaSicurezza:pre?pre.ts:'', da:bkRealTurno()}); }catch(_){} }
+    if(pre) bkAddItems(pre.stamp, pre.items);
+    BK.busy=false; BK.sel=''; BK.tsel=''; BK.dest='orig';
+    openModal('<h3>Ripristino completato</h3><div class="ms" style="font-size:0.84rem;line-height:1.45;color:var(--ink)">'
+      +(prova ? 'La copia del turno '+esc(src[0].T)+' del <b>'+esc(when)+'</b> è ora nel <b>turno PROVA</b>. Scegli PROVA in alto per controllarla.'
+              : (done.length>1?'I turni <b>'+esc(done.join(', '))+'</b> sono tornati com\'erano':'Il turno <b>'+esc(done[0])+'</b> è tornato com\'era')+' il <b>'+esc(when)+'</b>.'
+                +(pre?'<br><br>Copia di sicurezza di prima: <b>'+esc(bkFmt(pre.ts))+'</b> (“prima del ripristino”).':''))
+      +'</div><button class="btn btn-fire btn-full" onclick="closeModal()">Ok</button>');
+    render();
+  }catch(e){
+    BK.busy=false;
+    const parz = done.length ? 'Sono stati ripristinati solo: <b>'+esc(done.join(', '))+'</b>. Gli altri sono rimasti com\'erano.'+(pre?' Per tornare indietro usa la copia “prima del ripristino” del '+esc(bkFmt(pre.ts))+'.':'')
+                             : 'Nessun dato è stato modificato.';
+    openModal('<h3>Ripristino non eseguito</h3><div class="ms" style="font-size:0.84rem;line-height:1.45;color:var(--ink)">'+esc(e.message)+'<br><br>'+parz+'</div><button class="btn btn-fire btn-full" onclick="closeModal()">Chiudi</button>');
+    if(pre) bkAddItems(pre.stamp, pre.items);
+    render();
+  }
+}
+
+function bkLogModal(){
+  openModal('<h3>Registro dei ripristini</h3><div class="ms" id="bkLog" style="max-height:60vh;overflow:auto">Carico…</div><button class="btn btn-out btn-full" onclick="closeModal()">Chiudi</button>');
+  bkJson('/log').then(j=>{
+    const el=document.getElementById('bkLog'); if(!el) return;
+    const it=j.items||[];
+    el.innerHTML = it.length ? it.map(r=>'<div class="row" style="margin-bottom:0.35rem"><div><div class="rn">'+esc(bkFmt(r.ts))+'</div><div class="rs">'
+      +esc(r.chi)+' ha ripristinato il turno <b>'+esc(r.turno)+'</b>'+(r.verso&&r.verso!==r.turno?' dentro <b>'+esc(r.verso)+'</b>':'')+' alla copia del '+esc(bkFmt(r.copia))
+      +(r.copiaSicurezza?' · copia di sicurezza: '+esc(bkFmt(r.copiaSicurezza)):'')+'</div></div></div>').join('')
+      : 'Nessun ripristino eseguito finora.';
+  }, e=>{ const el=document.getElementById('bkLog'); if(el) el.textContent=e.message; });
 }
 
 /* ======================= PDF ======================= */
